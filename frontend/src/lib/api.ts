@@ -268,6 +268,7 @@ export interface Target {
   hp: number;
   bullet_resist: number;
   headshot_pct: number;
+  spirit_resist: number;
 }
 
 export interface Build {
@@ -276,6 +277,15 @@ export interface Build {
   items: number[];
   toggles: string[];
   target: Target;
+  ability_tier: number;
+}
+
+export interface AbilityInfo {
+  name: string;
+  image?: string;
+  lines: { label: string; base: number; value: number; vs_dummy: number; factor: number; other_scaling: string | null }[];
+  cooldown_base: number | null;
+  cooldown: number | null;
 }
 
 export interface StatRow {
@@ -319,8 +329,12 @@ export interface Sheet {
     headshot_mult: number;
     target_resist: number;
     shred: number;
+    spirit_amp: number;
+    target_spirit_resist: number;
+    spirit_shred: number;
   };
   effects: EffectInfo[];
+  abilities: AbilityInfo[];
   notes: string[];
   items: number[];
   slots: { limit: number; est: boolean };
@@ -359,10 +373,25 @@ export interface MacroLayers {
   image?: string;
   overlays: { id: string; label: string; image?: string }[];
   layers: MapLayerData[];
+  verified: { match_id: number; start_time: number | null } | null;
   transform: { ax: number; bx: number; ay: number; by: number };
   meters_per_unit: number;
   teams: Record<string, string>;
   heroes: (HeroCard & { move: number; sprint: number })[];
+}
+
+export interface Movement {
+  matches: number;
+  zip_speed: number; // game units per second, measured
+  foot_speed: number;
+  fast_speed: number;
+  detour: number;
+  detour_best: number;
+  samples: { zip_s: number; foot_windows: number; trips: number };
+  attach_s: number;
+  avg_hero_move: number;
+  grid: number;
+  walkable: [number, number][];
 }
 
 export interface WavesData {
@@ -478,6 +507,7 @@ export const api = {
     request<SavedBuild>("/builds/import", { method: "POST", body: JSON.stringify(data) }),
   exportUrl: (id: number) => `/api/builds/${id}/export`,
   macroLayers: () => request<MacroLayers>("/macro/layers"),
+  macroMovement: () => request<Movement>("/macro/movement"),
   macroWaves: (matchId?: number) => request<WavesData>(`/macro/waves${matchId ? `?match_id=${matchId}` : ""}`),
   macroHeatmap: (n = 10) => request<HeatmapData>(`/macro/heatmap?n=${n}`),
   macroScenarios: () => request<ScenarioRow[]>("/macro/scenarios"),

@@ -4,6 +4,28 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Fixed (map is now the post-City Never Sleeps map)
+- Urn: only the 2 live urn sites show. The asset data's 4 older spawn points are
+  dropped (checked in post-update replays: urns only spawn and are delivered at 2 sites).
+- Objectives stand where the NPCs really are (asset positions were minimap icon
+  spots ~1,500 units off). Added Base Guardians, Shrines and Mid Boss.
+- Positions come from the newest parsed replay (`truth.json`); a post-update sample
+  is bundled. The map says which replay it was checked against.
+- Hidden King is amber/orange and Archmother is blue, as in the game data.
+  Your-side colours (heatmap, "What would you do?") stay ally blue / enemy orange.
+
+### Added
+- City Never Sleeps features: Bell Tower and Sunken Plaza markers, Haunt camps
+  with their district, district labels (Theater, Chinatown, Haunted Lot, Plaza),
+  Buff containers with their permanent buffs from the loot table, Tough crates,
+  Steam vents and Veils as their own layers.
+- Routes mode: optimal movement vs zipline from A to B, and a "faster from where?"
+  map for any destination. Speeds are measured from real matches (zipline ~882,
+  optimal movement ~443, normal ~326 game units/s) with a measured detour factor.
+- Build Lab: ability damage per ability, without items vs with the build, scaled by
+  spirit power from game data, with ability upgrade tiers, spirit damage
+  multipliers, cooldown reduction and a dummy with spirit resist and your shred.
+
 ### Added (Phase 3: Macro Map page)
 - Macro Map page (`/map`) with four modes: Explore (layers, hover tips, rotation
   planner with walk/sprint times), Waves (replay playback, meeting point per lane

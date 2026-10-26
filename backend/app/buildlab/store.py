@@ -15,6 +15,7 @@ class TargetIn(BaseModel):
     hp: float = 2500
     bullet_resist: float = 0
     headshot_pct: float = 0
+    spirit_resist: float = 0
 
 
 class BuildIn(BaseModel):
@@ -23,6 +24,7 @@ class BuildIn(BaseModel):
     items: list[int] = Field(default_factory=list, max_length=40)
     toggles: list[str] = Field(default_factory=list)
     target: TargetIn = Field(default_factory=TargetIn)
+    ability_tier: int = Field(0, ge=0, le=3)  # ability upgrades bought, applied to every ability
 
 
 class SavedBuildIn(BuildIn):

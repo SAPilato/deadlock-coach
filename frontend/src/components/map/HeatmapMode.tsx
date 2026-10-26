@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { clock } from "../../lib/format";
 import { ErrorBox, Loading } from "../ui";
-import MapCanvas, { Glyph, Lanes, S, TEAM_COLORS, type Hover } from "./MapCanvas";
+import MapCanvas, { ALLY, ENEMY, Glyph, Lanes, S, type Hover } from "./MapCanvas";
 
 const PHASES = [
   { id: "early", label: "Laning" },
@@ -47,7 +47,7 @@ export default function HeatmapMode() {
             left={o.left}
             top={o.top}
             ch={o.taken ? "▲" : "▼"}
-            color={o.taken ? TEAM_COLORS[0] : TEAM_COLORS[1]}
+            color={o.taken ? ALLY : ENEMY}
             size={26}
             label={o.name}
             onHover={() => setHover({ left: o.left, top: o.top, title: `${o.taken ? "Taken" : "Lost"}: ${o.name}`, lines: [`At ${clock(o.t)} in match ${o.match_id}`] })}
@@ -82,10 +82,10 @@ export default function HeatmapMode() {
         </div>
         <ul className="space-y-1 text-dim">
           <li>
-            <span style={{ color: TEAM_COLORS[0] }}>▲</span> Objective your team took
+            <span style={{ color: ALLY }}>▲</span> Objective your team took
           </li>
           <li>
-            <span style={{ color: TEAM_COLORS[1] }}>▼</span> Objective your team lost
+            <span style={{ color: ENEMY }}>▼</span> Objective your team lost
           </li>
         </ul>
         <p className="text-dim">Are you near the objectives that fell? If not, rotate sooner.</p>

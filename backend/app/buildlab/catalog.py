@@ -32,6 +32,13 @@ def hero_and_weapon(gd: GameData, hero_id: int) -> tuple[dict, dict]:
     return hero, weapon
 
 
+def hero_abilities(gd: GameData, hero: dict) -> list[dict]:
+    """The hero's four abilities (signature1..4), as item records."""
+    by_class = {i.get("class_name"): i for i in gd.items()}
+    kit = hero.get("items") or {}
+    return [by_class[kit[s]] for s in ("signature1", "signature2", "signature3", "signature4") if kit.get(s) in by_class]
+
+
 def shop_items(gd: GameData, hero_id: int) -> list[dict]:
     return [
         i for i in gd.items()

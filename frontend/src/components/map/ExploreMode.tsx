@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MapPoint } from "../../lib/api";
-import { routeMeters, type Pt } from "../../lib/geo";
-import { num } from "../../lib/format";
-import { ErrorBox, EstTag, Loading } from "../ui";
+import { ErrorBox, Loading } from "../ui";
 import MapCanvas, { Glyph, Lanes, S, TEAM_COLORS, type Hover } from "./MapCanvas";
 
 const INK = "#f4f5f7";
@@ -32,65 +30,63 @@ function glyph(p: MapPoint): { ch: string; color: string; size: number } {
       return { ch: "●", color: CAMP, size: p.size === "strong" ? 26 : p.size === "weak" ? 14 : 19 };
     case "vault":
       return { ch: "◆", color: CAMP, size: 26 };
-    case "urn_spawn":
-      return { ch: "◎", color: INK, size: 30 };
-    case "urn_pad":
-      return { ch: "▣", color: INK, size: 28 };
+    case "bell_tower":
+      return { ch: "♪", color: INK, size: 40 };
+    case "sunken_plaza":
+      return { ch: "▽", color: INK, size: 40 };
     case "shop":
       return { ch: "$", color: INK, size: 28 };
     case "statue":
       return { ch: "✦", color: DIM, size: 18 };
     case "crate":
       return { ch: "•", color: DIM, size: 18 };
+    case "tough_crate":
+      return { ch: "▪", color: INK, size: 18 };
     case "buff":
       return { ch: "✚", color: INK, size: 22 };
+    case "healing":
+      return { ch: "✚", color: CAMP, size: 18 };
+    case "vent":
+      return { ch: "≋", color: DIM, size: 22 };
+    case "veil":
+      return { ch: "◌", color: DIM, size: 20 };
     case "move":
-      return { ch: p.label.startsWith("Teleporter") ? "⊕" : p.label.startsWith("Bounce") ? "↑" : p.label.startsWith("Climb") ? "┃" : "≋", color: DIM, size: 22 };
+      return { ch: p.label.startsWith("Teleporter") ? "⊕" : p.label.startsWith("Bounce") ? "↑" : "┃", color: DIM, size: 22 };
     default:
       return { ch: "◌", color: DIM, size: 18 };
   }
 }
 
 const LEGEND: Record<string, string> = {
-  objectives: "▲ ■ ★",
+  objectives: "▲ ■ ◆ ◈ ★ ✹",
+  special: "♪ ▽",
   camps: "● ◆",
-  urn: "◎ ▣",
+  urn: "◎",
+  districts: "Aa",
   shops: "$",
   statues: "✦",
-  crates: "•",
-  buffs: "✚",
-  movement: "⊕ ↑ ┃ ≋",
+  crates: "• ▪",
+  healing: "✚",
+  vents: "≋",
+  veils: "◌",
+  movement: "⊕ ↑ ┃",
   other: "◌",
 };
 
 export default function ExploreMode() {
   const q = useQuery({ queryKey: ["macro-layers"], queryFn: api.macroLayers, staleTime: Infinity });
-  const matches = useQuery({ queryKey: ["matches"], queryFn: () => api.matches() });
   const [on, setOn] = useState<Set<string> | null>(null);
   const [tunnels, setTunnels] = useState<Set<string>>(new Set());
   const [hover, setHover] = useState<Hover | null>(null);
-  const [planning, setPlanning] = useState(false);
-  const [route, setRoute] = useState<Pt[]>([]);
-  const [heroId, setHeroId] = useState<number | null>(null);
 
   useEffect(() => {
     if (q.data && on == null) setOn(new Set(q.data.layers.filter((l) => l.on).map((l) => l.id)));
   }, [q.data, on]);
-  useEffect(() => {
-    if (heroId == null && q.data && !matches.isLoading) {
-      setHeroId(matches.data?.matches.find((m) => !m.street_brawl)?.hero.id ?? q.data.heroes[0]?.id ?? null);
-    }
-  }, [heroId, q.data, matches.isLoading, matches.data]);
 
-  const meters = useMemo(
-    () => (q.data ? routeMeters(route, q.data.transform, q.data.meters_per_unit) : 0),
-    [route, q.data],
-  );
 
   if (q.isLoading || !on) return <Loading label="Loading the map…" />;
   if (q.error) return <ErrorBox error={q.error} />;
   const d = q.data!;
-  const hero = d.heroes.find((h) => h.id === heroId) ?? d.heroes[0];
   const lanes = d.layers.find((l) => l.id === "lanes")?.lines ?? [];
   const toggle = (id: string) =>
     setOn((s) => {
@@ -106,15 +102,24 @@ export default function ExploreMode() {
         image={d.image}
         overlays={d.overlays.filter((o) => tunnels.has(o.id) && o.image).map((o) => o.image!)}
         hover={hover}
-        crosshair={planning}
-        onClick={(l, t) => planning && setRoute((r) => [...r, [l, t]])}
-        caption={planning ? "Click the map to add route points." : "Hover any marker for a tip."}
+        caption="Hover any marker for facts and a tip."
       >
         {on.has("lanes") && <Lanes lanes={lanes} />}
         {d.layers
           .filter((layer) => layer.id !== "lanes" && on.has(layer.id))
           .map((layer) =>
             layer.points.map((p, i) => {
+              if (p.kind === "district") {
+                return (
+                  <text
+                    key={`${layer.id}${i}`} x={p.left * S} y={p.top * S} textAnchor="middle" dominantBaseline="central"
+                    fontSize={30} fontWeight={700} fill="#f4f5f7" opacity={0.85} stroke="#0e1014" strokeWidth={6} paintOrder="stroke"
+                    style={{ pointerEvents: "none", textTransform: "uppercase", letterSpacing: 2 }}
+                  >
+                    {p.label}
+                  </text>
+                );
+              }
               const g = glyph(p);
               return (
                 <g key={`${layer.id}${i}`}>
@@ -133,14 +138,6 @@ export default function ExploreMode() {
               );
             }),
           )}
-        {route.length > 0 && (
-          <g>
-            <polyline points={route.map(([a, b]) => `${a * S},${b * S}`).join(" ")} fill="none" stroke={INK} strokeWidth={5} strokeDasharray="12 8" />
-            {route.map(([a, b], i) => (
-              <circle key={i} cx={a * S} cy={b * S} r={10} fill={i === 0 ? "#3987e5" : INK} stroke="#171a21" strokeWidth={3} />
-            ))}
-          </g>
-        )}
       </MapCanvas>
 
       <div className="space-y-5">
@@ -185,57 +182,13 @@ export default function ExploreMode() {
             <span style={{ color: TEAM_COLORS[0] }}>■</span> {d.teams["0"]} ·{" "}
             <span style={{ color: TEAM_COLORS[1] }}>■</span> {d.teams["1"]}
           </p>
+          <p className="mt-1 text-sm text-muted">
+            {d.verified
+              ? `Objectives and urn sites checked in a replay from ${d.verified.start_time ? new Date(d.verified.start_time * 1000).toLocaleDateString() : `match ${d.verified.match_id}`}.`
+              : "Objectives and urn not checked against a replay yet."}
+          </p>
         </div>
 
-        <div className="rounded-xl bg-panel2 border border-line p-4 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-bold">🧭 Rotation planner</h3>
-            <button type="button" className={planning ? "btn-primary" : "btn"} onClick={() => setPlanning(!planning)} aria-pressed={planning}>
-              {planning ? "Planning: on" : "Plan a route"}
-            </button>
-          </div>
-          <label className="block">
-            <span className="label">Hero speed</span>
-            <select
-              value={hero?.id}
-              onChange={(e) => setHeroId(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg bg-bg border border-line px-3 py-2"
-            >
-              {d.heroes.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name} · {h.move} m/s
-                </option>
-              ))}
-            </select>
-          </label>
-          {route.length >= 2 && hero ? (
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="label">Distance</div>
-                <div className="text-2xl font-bold tnum">{num(meters)} m<EstTag /></div>
-              </div>
-              <div>
-                <div className="label">Walking</div>
-                <div className="text-2xl font-bold tnum">{num(meters / hero.move)} s<EstTag /></div>
-              </div>
-              <div>
-                <div className="label">Sprinting</div>
-                <div className="text-2xl font-bold tnum">{num(meters / (hero.move + hero.sprint))} s<EstTag /></div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-dim">Click two or more points on the map.</p>
-          )}
-          <div className="flex gap-2">
-            <button type="button" className="btn" disabled={!route.length} onClick={() => setRoute((r) => r.slice(0, -1))}>
-              ↶ Undo
-            </button>
-            <button type="button" className="btn" disabled={!route.length} onClick={() => setRoute([])}>
-              Clear
-            </button>
-          </div>
-          <p className="text-sm text-muted">Straight lines. Walls, ziplines and items are ignored.</p>
-        </div>
       </div>
     </div>
   );

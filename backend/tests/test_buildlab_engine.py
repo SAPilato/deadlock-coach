@@ -173,6 +173,55 @@ def test_resist_items_stack_multiplicatively(data):
     assert row(sheet, "bullet_resist") == pytest.approx(value)
 
 
+def test_ability_damage_scales_with_spirit_and_upgrades(data, seed_gd):
+    from app.buildlab.catalog import hero_abilities
+
+    hero = hero_named(data, "Paradox")
+    weapon = weapon_of(data, hero)
+    kit = hero_abilities(seed_gd, hero)
+    grenade = next(a for a in kit if a["name"] == "Pulse Grenade")
+    prop = grenade["properties"]["PulseDamage"]
+    base, factor = float(prop["value"]), prop["scale_function"]["stat_scale"]
+    spirit_items = [data["by_name"]["Extra Spirit"], data["by_name"]["Improved Spirit"]]
+
+    no_items = compute(hero, weapon, [], 1, abilities=kit)
+    built = compute(hero, weapon, spirit_items, 1, abilities=kit)
+    spirit = row(built, "spirit_power")
+    line = next(a for a in built.abilities if a["name"] == "Pulse Grenade")["lines"][0]
+    assert line["base"] == pytest.approx(base)  # level 1: no boons, no spirit
+    assert line["value"] == pytest.approx(base + factor * spirit)
+
+    # Upgrades add flat damage and extra spirit scaling, from the ability's own data.
+    upgraded = compute(hero, weapon, spirit_items, 1, abilities=kit, ability_tier=2)
+    up = next(a for a in upgraded.abilities if a["name"] == "Pulse Grenade")["lines"][0]
+    assert up["factor"] > factor and up["value"] > line["value"]
+    assert next(a for a in no_items.abilities if a["name"] == "Pulse Grenade")["lines"][0]["factor"] == factor
+
+
+def test_only_damage_values_are_listed(data, seed_gd):
+    from app.buildlab.catalog import hero_abilities
+
+    for hero in data["heroes"]:
+        sheet = compute(hero, weapon_of(data, hero), [], 1, abilities=hero_abilities(seed_gd, hero))
+        for a in sheet.abilities:
+            for line in a["lines"]:
+                assert not any(w in line["label"].lower() for w in ("interval", "tick", "duration", "radius")), line
+
+
+def test_cooldown_reduction_and_spirit_resist_apply_to_abilities(data, seed_gd):
+    from app.buildlab.catalog import hero_abilities
+
+    hero = hero_named(data, "Paradox")
+    weapon = weapon_of(data, hero)
+    kit = hero_abilities(seed_gd, hero)
+    cdr = data["by_name"]["Superior Cooldown"]
+    pct = float(cdr["properties"]["CooldownReduction"]["value"])
+    sheet = compute(hero, weapon, [cdr], 1, abilities=kit, target=Target(spirit_resist=25))
+    grenade = next(a for a in sheet.abilities if a["name"] == "Pulse Grenade")
+    assert grenade["cooldown"] == pytest.approx(grenade["cooldown_base"] * (1 - pct / 100))
+    assert grenade["lines"][0]["vs_dummy"] == pytest.approx(grenade["lines"][0]["value"] * 0.75)
+
+
 def test_headshots_and_resist_change_time_to_kill(data):
     hero = hero_named(data, "Paradox")
     weapon = weapon_of(data, hero)

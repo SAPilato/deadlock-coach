@@ -29,6 +29,7 @@ class Target:
     hp: float = 2500.0
     bullet_resist: float = 0.0
     headshot_pct: float = 0.0
+    spirit_resist: float = 0.0
 
 
 @dataclass
@@ -54,6 +55,7 @@ class Sheet:
     dps: dict
     effects: list[dict]
     notes: list[str] = field(default_factory=list)
+    abilities: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -115,6 +117,80 @@ def resistance(innate: float, sources: list[float], reductions: list[float]) -> 
     return resist - stack([abs(r) for r in reductions])
 
 
+# ---- abilities ------------------------------------------------------------------------
+
+NOT_DAMAGE = ("duration", "threshold", "radius", "heal", "reduction", "amp", "resist", "range", "interval", "tick")
+
+
+def ability_upgrades(ability: dict, tier: int) -> tuple[dict[str, float], dict[str, float]]:
+    """(flat bonus, spirit-scale bonus) per property from the first `tier` upgrades."""
+    from app.buildlab.effects import parse_number
+
+    flat: dict[str, float] = {}
+    scale: dict[str, float] = {}
+    for up in (ability.get("upgrades") or [])[:tier]:
+        for pu in up.get("property_upgrades") or []:
+            v = parse_number(pu.get("bonus"))
+            if v is None:
+                continue
+            bucket = scale if pu.get("upgrade_type") == "EAddToScale" else flat
+            bucket[pu["name"]] = bucket.get(pu["name"], 0.0) + v
+    return flat, scale
+
+
+def ability_damage(ability: dict, spirit: float, tier: int) -> dict:
+    """Damage values and cooldown of one ability at a given spirit power.
+
+    The game data gives each damage value a scale function. For spirit
+    scaling it names ETechPower and a factor: damage = base + factor x spirit.
+    Values that scale with weapon or melee damage are listed, not computed.
+    """
+    from app.buildlab.effects import parse_number
+
+    flat, scale_bonus = ability_upgrades(ability, tier)
+    lines = []
+    for prop, v in (ability.get("properties") or {}).items():
+        text = f"{prop} {v.get('label') or ''}".lower()
+        if (v.get("postfix") or "").strip() in ("%", "s", "m", "x"):
+            continue
+        if not ("damage" in text or "dps" in text) or any(w in text for w in NOT_DAMAGE):
+            continue
+        base = parse_number(v.get("value"))
+        if not base or base <= 0:
+            continue
+        sf = v.get("scale_function") or {}
+        stat = sf.get("specific_stat_scale_type")
+        spirit_scaled = sf.get("class_name") == "scale_function_tech_damage" or stat == "ETechPower"
+        factor = ((sf.get("stat_scale") or 0.0) + scale_bonus.get(prop, 0.0)) if spirit_scaled else 0.0
+        value = base + flat.get(prop, 0.0) + factor * spirit
+        other = None if spirit_scaled or not stat else stat  # e.g. EWeaponPower, ELightMeleeDamage
+        lines.append({"prop": prop, "label": v.get("label") or prop, "value": value, "factor": factor, "other_scaling": other})
+    cd = parse_number(((ability.get("properties") or {}).get("AbilityCooldown") or {}).get("value"))
+    cooldown = (cd + flat.get("AbilityCooldown", 0.0)) if cd and cd > 0 else None
+    return {"lines": lines, "cooldown": cooldown}
+
+
+def abilities_sheet(abilities: list[dict], spirit0: float, spirit: float, tier: int, cdr: float, amp: float, resist: float) -> list[dict]:
+    """Each ability without items (spirit from boons only) vs with this build."""
+    out = []
+    for ab in abilities:
+        before = ability_damage(ab, spirit0, tier)
+        after = ability_damage(ab, spirit, tier)
+        lines = []
+        for b, a in zip(before["lines"], after["lines"]):
+            built = a["value"] * amp
+            lines.append({
+                "label": a["label"], "base": b["value"], "value": built,
+                "vs_dummy": built * (1 - resist / 100), "factor": a["factor"], "other_scaling": a["other_scaling"],
+            })
+        out.append({
+            "name": ab.get("name"), "image": ab.get("image"), "lines": lines,
+            "cooldown_base": before["cooldown"],
+            "cooldown": after["cooldown"] * (1 - cdr / 100) if after["cooldown"] else None,
+        })
+    return out
+
+
 # ---- main ---------------------------------------------------------------------------
 
 
@@ -125,6 +201,8 @@ def compute(
     level: int,
     toggles: set[str] | frozenset[str] = frozenset(),
     target: Target | None = None,
+    abilities: list[dict] | None = None,
+    ability_tier: int = 0,
 ) -> Sheet:
     target = target or Target()
     w = weapon.get("weapon_info") or {}
@@ -278,6 +356,21 @@ def compute(
     if any(s for s in (bd_scaled, clip_scaled, fr_scaled, rps_scaled, ms_scaled, sprint_scaled)):
         notes.append("This hero scales some stats with spirit power. Those rows are estimates.")
 
+    # Abilities: spirit scaling from game data; item spirit-damage multipliers; dummy spirit resist.
+    spirit0 = boons * growth.get(M + "TECH_POWER", 0)
+    spirit_amp = all_dmg
+    for p in each("TECH_DAMAGE_MULTIPLIER"):
+        spirit_amp *= 1 + p / 100
+    spirit_shred = [e.value for e in theirs if e.stat == M + "TECH_RESIST_REDUCTION"]
+    target_spirit_resist = resistance(0, [target.spirit_resist], spirit_shred)
+    ability_rows = abilities_sheet(
+        abilities or [], spirit0, spirit, max(0, min(3, ability_tier)),
+        stack(each("COOLDOWN_REDUCTION_PERCENTAGE")), spirit_amp, target_spirit_resist,
+    )
+    dps["spirit_amp"] = spirit_amp
+    dps["target_spirit_resist"] = target_spirit_resist
+    dps["spirit_shred"] = stack([abs(s) for s in spirit_shred])
+
     return Sheet(
         level=level,
         boons=boons,
@@ -288,4 +381,5 @@ def compute(
         dps=dps,
         effects=[{**e.to_dict(), "on": e.kind == "always" or e.key in toggles} for e in effects],
         notes=notes,
+        abilities=ability_rows,
     )

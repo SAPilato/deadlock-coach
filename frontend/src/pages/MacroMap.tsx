@@ -1,11 +1,13 @@
 import { useSearchParams } from "react-router-dom";
 import ExploreMode from "../components/map/ExploreMode";
+import RouteMode from "../components/map/RouteMode";
 import WavesMode from "../components/map/WavesMode";
 import HeatmapMode from "../components/map/HeatmapMode";
 import ScenarioMode from "../components/map/ScenarioMode";
 
 const MODES = [
-  { id: "explore", label: "🗺 Explore", blurb: "Every camp, objective and shortcut. Plan a rotation." },
+  { id: "explore", label: "🗺 Explore", blurb: "Every camp, objective and shortcut on the current map." },
+  { id: "route", label: "🧭 Routes", blurb: "Optimal movement or zipline: which gets you there faster?" },
   { id: "waves", label: "🌊 Waves", blurb: "Real trooper waves from a replay. See where they meet." },
   { id: "heatmap", label: "🔥 Your heatmap", blurb: "Where you spend your time in each phase." },
   { id: "decide", label: "🤔 What would you do?", blurb: "Real moments from your games. Pick, then see what happened." },
@@ -39,6 +41,7 @@ export default function MacroMap() {
       </div>
       <section className="card">
         {mode === "explore" && <ExploreMode />}
+        {mode === "route" && <RouteMode />}
         {mode === "waves" && <WavesMode />}
         {mode === "heatmap" && <HeatmapMode />}
         {mode === "decide" && <ScenarioMode />}

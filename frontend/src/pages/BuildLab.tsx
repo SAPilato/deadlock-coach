@@ -10,9 +10,10 @@ import StatTable from "../components/build/StatTable";
 import Effects from "../components/build/Effects";
 import Dummy from "../components/build/Dummy";
 import SavedBuilds from "../components/build/SavedBuilds";
+import Abilities from "../components/build/Abilities";
 import { souls } from "../components/build/common";
 
-const DEFAULT_TARGET: Target = { hp: 2500, bullet_resist: 0, headshot_pct: 0 };
+const DEFAULT_TARGET: Target = { hp: 2500, bullet_resist: 0, headshot_pct: 0, spirit_resist: 0 };
 const STORE_KEY = "coach.buildlab.v1";
 
 type Work = Build & { name: string; id: number | null };
@@ -34,12 +35,14 @@ function saveWork(w: Work) {
   }
 }
 
-const buildOf = (w: Work): Build => ({
+// Older saved builds lack newer fields; fill them with defaults.
+const buildOf = (w: Partial<Build> & { hero_id: number }): Build => ({
   hero_id: w.hero_id,
-  level: w.level,
-  items: w.items,
-  toggles: w.toggles,
-  target: w.target,
+  level: w.level ?? 1,
+  items: w.items ?? [],
+  toggles: w.toggles ?? [],
+  target: { ...DEFAULT_TARGET, ...(w.target ?? {}) },
+  ability_tier: w.ability_tier ?? 0,
 });
 
 export default function BuildLab() {
@@ -58,7 +61,7 @@ export default function BuildLab() {
     if (work || !heroes.data || matches.isLoading) return;
     const recent = matches.data?.matches.find((m) => !m.street_brawl)?.hero.id;
     const hero_id = recent ?? heroes.data[0]?.id;
-    if (hero_id) setWork({ hero_id, level: 1, items: [], toggles: [], target: DEFAULT_TARGET, name: "My build", id: null });
+    if (hero_id) setWork({ hero_id, level: 1, items: [], toggles: [], target: DEFAULT_TARGET, ability_tier: 0, name: "My build", id: null });
   }, [work, heroes.data, matches.data]);
 
   // /build?match=123 imports what you owned at the end of that match.
@@ -68,7 +71,7 @@ export default function BuildLab() {
     api
       .matchBuild(Number(matchParam))
       .then((m) => {
-        setWork({ hero_id: m.hero_id, level: m.level, items: m.items, toggles: [], target: DEFAULT_TARGET, name: m.name, id: null });
+        setWork({ hero_id: m.hero_id, level: m.level, items: m.items, toggles: [], target: DEFAULT_TARGET, ability_tier: 0, name: m.name, id: null });
         setNotice(`Loaded your items from match ${matchParam}.`);
       })
       .catch((e) => setNotice(`Could not load that match: ${e.message}`))
@@ -105,8 +108,8 @@ export default function BuildLab() {
   });
   const compareBuild = builds.data?.find((b) => b.id === compareId) ?? null;
   const compareSheet = useQuery({
-    queryKey: ["bl-sheet", compareBuild && buildOf({ ...compareBuild, id: compareBuild.id })],
-    queryFn: () => api.blCompute(buildOf({ ...compareBuild!, id: compareBuild!.id })),
+    queryKey: ["bl-sheet", compareBuild && buildOf(compareBuild)],
+    queryFn: () => api.blCompute(buildOf(compareBuild!)),
     enabled: !!compareBuild,
   });
 
@@ -258,10 +261,20 @@ export default function BuildLab() {
       </Section>
 
       <Section title="5. DPS dummy">
-        <Dummy target={work.target} onChange={(target) => update({ target })} sheet={sheet.data} />
+        <Dummy target={buildOf(work).target} onChange={(target) => update({ target })} sheet={sheet.data} />
       </Section>
 
-      <Section title="6. Save and compare">
+      <Section title="6. Ability damage">
+        <Abilities
+          sheet={sheet.data}
+          tier={build?.ability_tier ?? 0}
+          onTier={(ability_tier) => update({ ability_tier })}
+          spiritResist={build?.target.spirit_resist ?? 0}
+          onSpiritResist={(spirit_resist) => update((w) => ({ target: { ...buildOf(w).target, spirit_resist } }))}
+        />
+      </Section>
+
+      <Section title="7. Save and compare">
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={(e) => {
@@ -294,7 +307,7 @@ export default function BuildLab() {
           currentId={work.id}
           compareId={compareId}
           onLoad={(b) => {
-            setWork({ hero_id: b.hero_id, level: b.level, items: b.items, toggles: b.toggles, target: b.target, name: b.name, id: b.id });
+            setWork({ ...buildOf(b), name: b.name, id: b.id });
             setNotice(`Opened "${b.name}".`);
           }}
           onCompare={setCompareId}

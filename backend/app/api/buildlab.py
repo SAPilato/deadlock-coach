@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from app.api.deps import coach, settings
 from app.api.routes import _account, _api_errors
 from app.buildlab import store
-from app.buildlab.catalog import hero_and_weapon, playable_heroes, shop, shop_items
+from app.buildlab.catalog import hero_abilities, hero_and_weapon, playable_heroes, shop, shop_items
 from app.buildlab.engine import Target, compute, max_level
 from app.buildlab.slots import slot_limit
 from app.settings import Settings
@@ -43,7 +43,10 @@ def sheet_for(st: AppState, b: store.BuildIn) -> dict:
         else:
             picked.append(valid[iid])
     level = max(1, min(b.level, max_level(hero)))
-    sheet = compute(hero, weapon, picked, level, set(b.toggles), Target(**b.target.model_dump()))
+    sheet = compute(
+        hero, weapon, picked, level, set(b.toggles), Target(**b.target.model_dump()),
+        abilities=hero_abilities(st.gd, hero), ability_tier=b.ability_tier,
+    )
     return {
         **sheet.to_dict(),
         "hero": {"id": hero["id"], "name": hero["name"]},

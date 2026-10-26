@@ -10,6 +10,7 @@ from app.buildlab.catalog import playable_heroes
 from app.gamedata.client import ApiError
 from app.macro.heatmap import heatmap
 from app.macro.layers import TEAM_NAMES, build_layers
+from app.macro.movement import measure
 from app.macro.scenarios import list_scenarios, scenario
 from app.replay.jobs import SEED_REPLAYS, matches_with_waves, waves_for
 from app.report import hero_card
@@ -90,6 +91,11 @@ def waves(match_id: int | None = None, st: AppState = Depends(coach), s: Setting
         "schedule": _wave_schedule(st),
         **data,
     }
+
+
+@router.get("/movement")
+def movement(st: AppState = Depends(coach)):
+    return _api_errors(lambda: measure(st))
 
 
 @router.get("/heatmap")

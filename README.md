@@ -49,9 +49,12 @@ Build Lab limits:
 
 ## Macro Map (Phase 3)
 
-- **Explore:** toggle layers (lanes, Guardians/Walkers, camps, urn, shops, statues,
-  crates, buffs, movement, tunnels). Hover a marker for facts and a tip. Plan a
-  route and see distance and travel time for any hero.
+- **Explore:** the current (post-City Never Sleeps) map: all objectives incl. Mid
+  Boss, Shrines and Base Guardians, the 2 urn sites, Bell Tower, Sunken Plaza, Haunt
+  camps, districts, buff containers, crates, steam vents and more. Hover for facts.
+- **Routes:** is optimal movement or the zipline faster? Pick A and B, or pick a
+  destination and see which option wins from every spot. Speeds are measured from
+  real matches.
 - **Waves:** real trooper waves from a replay, with play/pause, and where each
   lane's waves met every minute. A sample replay is bundled.
 - **Your heatmap:** where you spent time in laning, mid and late game over your
@@ -59,10 +62,16 @@ Build Lab limits:
 - **What would you do?:** real moments from your games. Pick an action, then see
   what you did and what happened next.
 
-Macro Map limits:
-- Distances use 1 game unit = 0.0254 m (Source convention, not confirmed): `est.`
-- Routes are straight lines; walls and ziplines are ignored.
+Macro Map notes:
+- The asset map data is partly stale (old urn spawns, icon-offset objectives). The
+  newest parsed replay corrects it; load a replay of a recent match to refresh it.
+- Route times: straight line × a detour factor measured from real paths. Zipline
+  boost, blocked lanes and walls are not modelled: `est.`
 - Wave data needs a replay. Your own appear after you load a replay on a match.
+
+Build Lab ability damage: damage = base + scaling × spirit power, from each
+ability's game data, plus the upgrade tiers you pick. Values that scale with
+weapon or melee damage are listed but not computed.
 
 Learn comes in a later phase.
 

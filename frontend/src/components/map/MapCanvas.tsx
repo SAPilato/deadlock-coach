@@ -2,7 +2,11 @@ import { ReactNode, useRef } from "react";
 
 export const S = 1000; // viewBox size; relative positions are multiplied by this
 export const SURFACE = "#171a21";
-export const TEAM_COLORS = ["#3987e5", "#d95926"]; // team 0 (Hidden King), team 1 (Archmother)
+// Game data pairs Hidden King with amber and Archmother with sapphire (generic-data map_districts, color_team1/2).
+export const TEAM_COLORS = ["#d95926", "#3987e5"]; // team 0 (Hidden King), team 1 (Archmother)
+// "Your side" colours, independent of which team you were on. Same as the match report.
+export const ALLY = "#3987e5";
+export const ENEMY = "#d95926";
 
 export interface Hover {
   left: number;

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type ScenarioRow } from "../../lib/api";
 import { ago, clock, signed } from "../../lib/format";
 import { ErrorBox, HeroIcon, Loading, ReadAloud } from "../ui";
-import MapCanvas, { Glyph, Lanes, S, SURFACE, TEAM_COLORS } from "./MapCanvas";
+import MapCanvas, { ALLY, ENEMY, Glyph, Lanes, S, SURFACE } from "./MapCanvas";
 
 const ME = "#ffffff";
 
@@ -77,13 +77,13 @@ function Play({ row, onBack }: { row: ScenarioRow; onBack: () => void }) {
               left={o.left}
               top={o.top}
               ch={o.kind === "tier1" ? "▲" : o.kind === "tier2" ? "■" : "★"}
-              color={o.alive ? (o.ally ? TEAM_COLORS[0] : TEAM_COLORS[1]) : "#55555a"}
+              color={o.alive ? (o.ally ? ALLY : ENEMY) : "#55555a"}
               size={24}
             />
           ))}
           {f.pos.map((p) => {
             const who = sides.get(p.slot);
-            const color = who?.side === "enemy" ? TEAM_COLORS[1] : TEAM_COLORS[0];
+            const color = who?.side === "enemy" ? ENEMY : ALLY;
             const me = who?.side === "me";
             return p.alive ? (
               <circle key={p.slot} cx={p.left * S} cy={p.top * S} r={me ? 17 : 13} fill={color} stroke={me ? ME : SURFACE} strokeWidth={me ? 6 : 3}>
