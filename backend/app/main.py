@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.buildlab import router as buildlab_router
 from app.api.routes import router
 from app.config import REPO_ROOT
 from app.seed.load import load_seed
@@ -34,6 +35,7 @@ def create_app(state_factory: Callable[[], AppState] = create_state) -> FastAPI:
 
     app = FastAPI(title="Deadlock Coach", lifespan=lifespan)
     app.include_router(router, prefix="/api")
+    app.include_router(buildlab_router, prefix="/api")
 
     if DIST.exists():
         app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")

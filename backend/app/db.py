@@ -27,6 +27,14 @@ CREATE TABLE IF NOT EXISTS analyses (
     computed_at REAL NOT NULL,
     PRIMARY KEY (match_id, account_id)
 );
+CREATE TABLE IF NOT EXISTS builds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    hero_id INTEGER NOT NULL,
+    payload TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS replays (
     match_id INTEGER PRIMARY KEY,
     status TEXT NOT NULL,
@@ -56,6 +64,12 @@ class Database:
         with self._lock:
             self._conn.execute(sql, params)
             self._conn.commit()
+
+    def insert(self, sql: str, params: tuple | dict = ()) -> int:
+        with self._lock:
+            cur = self._conn.execute(sql, params)
+            self._conn.commit()
+            return cur.lastrowid
 
     def one(self, sql: str, params: tuple | dict = ()) -> sqlite3.Row | None:
         with self._lock:

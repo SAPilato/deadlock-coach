@@ -4,6 +4,17 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (Phase 2: Build Lab backend)
+- Stat engine (`backend/app/buildlab`): hero base stats + per-boon growth by level,
+  item effects typed by the stat they change, conditional and active effects behind
+  toggles, enemy debuffs (shred, slows) applied to the target dummy.
+- Combining rules follow Boon's documented equations (resists, lifesteal, fire
+  rate, clip, reload, spirit power, move speed, melee). Others are tagged `est.`
+- Base gun DPS matches the API's own weapon numbers for every hero (tested).
+- Item slot limit measured from real matches (12), not assumed.
+- Shop with soul cost, win rate and pick rate per item for your hero and rank.
+- Saved builds, JSON export/import, and "build used in a match" import.
+
 ### Changed
 - Minimaps draw the three lanes (York, Broadway, Greenwich) from map data so
   positions are readable; bigger death markers; whole-number rank benchmarks;
