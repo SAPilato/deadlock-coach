@@ -5,6 +5,12 @@ All notable changes. Newest first.
 ## [Unreleased]
 
 ### Added
+- Findings engine (`backend/app/findings`) with 8 rules: low souls/min, dying alone,
+  same death spot, idle time, late core item, missed objective fights, urn contest
+  (replay only), lane overstay. Each finding has a headline, one "next game" fix,
+  up to 3 detail lines, evidence vs a benchmark and map/timeline moments.
+- Habits without API rank stats are compared to the lobby average in the same match.
+- Readability test: fails if any rule text has a sentence over 15 words.
 - Match analysis (`backend/app/analysis`): per-second path decoding, minimap transform
   fitted from map entities, lanes matched to ziplines by color, objective positions,
   `MatchContext` with deaths, upgrades, snapshots and benchmarks for one player.

@@ -151,7 +151,8 @@ class ApiClient:
             raise
         except ApiError as e:
             if entry is not None:
-                log.warning("Serving stale cache for %s (%s)", key, e)
+                level = logging.DEBUG if isinstance(e, Offline) else logging.WARNING
+                log.log(level, "Serving stale cache for %s (%s)", key, e)
                 return entry.payload
             raise
         self.cache.set(key, payload, ttl=ttl, patch_version=patch_version)

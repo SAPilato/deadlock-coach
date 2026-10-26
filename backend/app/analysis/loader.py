@@ -28,7 +28,7 @@ def load_bench(gd: GameData, hero_id: int, bracket: tuple[int, int]) -> Benchmar
         curve = gd.perf_curve(hero_id, bracket)
         items = gd.item_stats(hero_id, bracket)
     except ApiError as e:
-        log.warning("No benchmarks for hero %s: %s", hero_id, e)
+        log.info("No benchmarks for hero %s: %s", hero_id, e)
         return None
     return Benchmarks(bracket=bracket, metrics=metrics or {}, curve=curve or [], items={r["item_id"]: r for r in items or []})
 
