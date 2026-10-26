@@ -5,6 +5,18 @@ All notable changes. Newest first.
 ## [Unreleased]
 
 ### Added
+- Replays: auto-download from Valve (when the API has the replay link) or upload a
+  `.dem`. Parsed with Boon in the background; urn pickups/drops/returns become
+  "urn episodes" for the urn rule. Valve serves zstd files named `.bz2`, so the
+  format is detected from magic bytes. The demo is deleted after parsing.
+- Frontend (React + Vite + Tailwind): Home with the focus habit, Matches list,
+  Match report (findings, souls timeline with event strip and live minimap
+  scrubber, vs-rank tiles, death map by phase, item timing diverging bars, lane
+  phase, replay box), Trends with per-game dots, Settings (Steam ID or name
+  search, rank range, game-data refresh). 18px Atkinson Hyperlegible, read-aloud
+  buttons, `est.` tags, colour palette checked for colour-blind safety.
+- `npm run dev` runner that restarts the API on .py changes without killing Vite
+  (uvicorn's own reloader breaks Vite on Windows).
 - HTTP API (`/api`): meta + patch status, settings (Steam ID in any format, rank
   bracket), Steam name search, match list, full match report, minimap paths for
   the timeline scrubber, trends across recent matches with one focus habit.

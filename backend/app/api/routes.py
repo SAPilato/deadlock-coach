@@ -1,7 +1,9 @@
 """HTTP API under /api. Routes are sync: FastAPI runs them in a thread pool."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import shutil
+
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from app.analysis.loader import load_context
@@ -9,7 +11,7 @@ from app.api.deps import coach, settings
 from app.findings.engine import run_rules
 from app.gamedata.client import ApiError, NotFound
 from app.gamedata.steamid import parse_account_id
-from app.replay.jobs import replay_for, replay_status
+from app.replay.jobs import match_dir, replay_for, replay_status, run_job, set_status
 from app.report import build_paths, build_report, hero_card, rank_info
 from app.settings import Settings
 from app.state import AppState
@@ -170,6 +172,40 @@ def paths(
     acc = _account(s, account_id)
     ctx = _api_errors(lambda: load_context(st.gd, match_id, acc, s.bracket))
     return build_paths(st.gd, ctx, step)
+
+
+# ---- replays ------------------------------------------------------------------------
+
+BUSY = ("downloading", "parsing")
+
+
+@router.get("/matches/{match_id}/replay")
+def get_replay(match_id: int, st: AppState = Depends(coach)):
+    return replay_status(st, match_id)
+
+
+@router.post("/matches/{match_id}/replay/fetch")
+def fetch_replay(match_id: int, tasks: BackgroundTasks, st: AppState = Depends(coach)):
+    if replay_status(st, match_id)["status"] in BUSY:
+        return replay_status(st, match_id)
+    set_status(st, match_id, "downloading")
+    tasks.add_task(run_job, st, match_id)
+    return replay_status(st, match_id)
+
+
+@router.post("/matches/{match_id}/replay")
+def upload_replay(match_id: int, tasks: BackgroundTasks, file: UploadFile = File(...), st: AppState = Depends(coach)):
+    name = (file.filename or "").lower()
+    if not (name.endswith(".dem") or name.endswith(".dem.bz2") or name.endswith(".bz2")):
+        raise HTTPException(400, "Pick a .dem or .dem.bz2 replay file.")
+    folder = match_dir(match_id)
+    folder.mkdir(parents=True, exist_ok=True)
+    dest = folder / ("match.download" if name.endswith(".bz2") else "match.dem")
+    with dest.open("wb") as out:
+        shutil.copyfileobj(file.file, out, 1 << 20)
+    set_status(st, match_id, "parsing", path=str(dest))
+    tasks.add_task(run_job, st, match_id, dest)
+    return replay_status(st, match_id)
 
 
 # ---- trends -------------------------------------------------------------------------

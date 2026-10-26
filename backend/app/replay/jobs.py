@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.config import DEMO_DIR
 from app.state import AppState
+
+log = logging.getLogger(__name__)
 
 RESULT_NAME = "replay.json"
 
@@ -17,7 +20,8 @@ class ReplayData:
     """What rules can use from a parsed replay. All times are match-clock seconds."""
 
     match_id: int
-    urn_events: list[dict] = field(default_factory=list)  # {"checkpoints": [(t, x, y), ...], "team": int|None}
+    # One per urn: {"checkpoints": [(t, x, y)], "carriers": [(hero_id, t_from, t_to)]}
+    urn_events: list[dict] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)  # parser caveats shown in the UI
 
     @classmethod
@@ -53,6 +57,31 @@ def replay_status(st: AppState, match_id: int) -> dict:
     if not row:
         return {"status": "none"}
     return {"status": row["status"], "error": row["error"], "updated_at": row["updated_at"]}
+
+
+def run_job(st: AppState, match_id: int, uploaded: Path | None = None) -> None:
+    """Download (unless uploaded), parse and store. Runs in a background thread."""
+    from app.replay.download import ReplayUnavailable, download_demo, unpack
+    from app.replay.parser import parse_demo
+
+    folder = match_dir(match_id)
+    try:
+        if uploaded is None:
+            set_status(st, match_id, "downloading")
+            dem = download_demo(st.gd, match_id, folder)
+        else:
+            set_status(st, match_id, "parsing")
+            dem = unpack(uploaded)
+        set_status(st, match_id, "parsing", path=str(dem))
+        data = parse_demo(dem, match_id)
+        data.save(folder / RESULT_NAME)
+        dem.unlink(missing_ok=True)  # demos are 300-500 MB; the parsed result is all we keep
+        set_status(st, match_id, "done")
+    except ReplayUnavailable as e:
+        set_status(st, match_id, "failed", error=str(e))
+    except Exception as e:  # parser errors: keep the message short for the UI
+        log.exception("Replay job failed for %s", match_id)
+        set_status(st, match_id, "failed", error=f"Could not read this replay: {str(e)[:160]}")
 
 
 _loaded: dict[int, tuple[float, ReplayData]] = {}

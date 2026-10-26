@@ -1,0 +1,47 @@
+@import "@fontsource/atkinson-hyperlegible/400.css";
+@import "@fontsource/atkinson-hyperlegible/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+/* 18px base: every rem in the app scales from here. */
+html {
+  font-size: 112.5%;
+}
+
+body {
+  @apply bg-bg text-ink font-sans antialiased;
+  line-height: 1.55;
+}
+
+:focus-visible {
+  outline: 3px solid #3987e5;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@layer components {
+  .card {
+    @apply bg-panel border border-line rounded-2xl p-5;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 font-bold bg-panel2 border border-line text-ink hover:border-s1 disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-s1 border-s1 text-white hover:brightness-110;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm bg-panel2 border border-line;
+  }
+  .label {
+    @apply text-sm uppercase tracking-wide text-muted font-bold;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}

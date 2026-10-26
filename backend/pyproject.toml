@@ -14,6 +14,7 @@ dependencies = [
   "polars>=1.0",
   "boon-deadlock>=0.19",
   "python-multipart>=0.0.9",
+  "zstandard>=0.22; python_version < '3.14'",  # 3.14+ has compression.zstd built in
 ]
 
 [project.optional-dependencies]
