@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type Lesson, type Trends } from "../lib/api";
 import { habitFor } from "../lib/learn";
 import { useLessons } from "../components/LessonLink";
-import { ErrorBox, EstTag, Loading, ReadAloud } from "../components/ui";
+import { ErrorBox, EstTag, Icon, Loading, ReadAloud } from "../components/ui";
 import { STATUS } from "./Home";
 import { TOPIC } from "./Learn";
+import { ChartColumn, Check, Play, Target } from "lucide-react";
+import LessonIcon from "../components/LessonIcon";
 
 const SOURCE: Record<Lesson["facts"][number]["source"], string> = {
   "game data": "Read from the game's own data files.",
@@ -18,7 +20,11 @@ export default function LessonPage() {
   const { id } = useParams();
   const lessons = useLessons();
   const trends = useQuery({ queryKey: ["trends", 20], queryFn: () => api.trends(20) });
-  useEffect(() => window.scrollTo(0, 0), [id]);
+  // Braces matter: newer browsers return a Promise from scrollTo, and React
+  // would call a returned value as the effect's cleanup.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   if (lessons.isLoading) return <Loading label="Loading lesson…" />;
   if (lessons.error) return <ErrorBox error={lessons.error} />;
@@ -40,16 +46,14 @@ export default function LessonPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/learn" className="font-bold text-s1 hover:underline">
+      <Link to="/learn" className="font-bold text-accent hover:underline">
         ← All lessons
       </Link>
       <header className="flex flex-wrap items-center gap-4">
-        <span className="text-6xl" aria-hidden>
-          {l.icon}
-        </span>
+        <LessonIcon name={l.icon} className="text-6xl text-accent" />
         <div>
           <div className="label">
-            {TOPIC[l.topic]} {l.topic}
+            <Icon icon={TOPIC[l.topic]} /> {l.topic}
           </div>
           <h1 className="text-4xl font-bold">{l.title}</h1>
         </div>
@@ -67,7 +71,7 @@ export default function LessonPage() {
           <ol className="space-y-4">
             {l.points.map((p, n) => (
               <li key={p} className="flex gap-3 text-xl">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-s1 font-bold text-white" aria-hidden>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent font-bold text-onaccent" aria-hidden>
                   {n + 1}
                 </span>
                 <span className="pt-1">{p}</span>
@@ -77,7 +81,7 @@ export default function LessonPage() {
         </section>
         {l.facts.length > 0 && (
           <section className="card space-y-4">
-            <h2 className="label">📊 From the game</h2>
+            <h2 className="label"><Icon icon={ChartColumn} /> From the game</h2>
             <ul className="space-y-4">
               {l.facts.map((f) => (
                 <li key={f.text} className="text-xl">
@@ -99,10 +103,10 @@ export default function LessonPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <Link to={l.try.href} className="btn-primary px-6 py-3 text-xl">
-          ▶ {l.try.label}
+          <Icon icon={Play} /> {l.try.label}
         </Link>
         <Link to={`/learn/${next.id}`} className="btn ml-auto">
-          Next: <span aria-hidden>{next.icon}</span> {next.title} →
+          Next: <LessonIcon name={next.icon} /> {next.title} →
         </Link>
       </div>
     </div>
@@ -113,7 +117,7 @@ function YourGames({ habit }: { habit: Trends["habits"][number] }) {
   const s = STATUS[habit.status];
   const clean = habit.recent_hits === 0;
   return (
-    <section className={`card space-y-3 border-2 ${clean ? "border-good" : "border-s1"}`}>
+    <section className={`card space-y-3 border-2 ${clean ? "border-good" : "border-accent"}`}>
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="label">Your games · {habit.habit}</h2>
         <span className={`chip font-bold ${s.cls}`}>
@@ -127,14 +131,14 @@ function YourGames({ habit }: { habit: Trends["habits"][number] }) {
         recent games had this problem.
       </p>
       {clean ? (
-        <p className="font-bold text-good">✓ Clean lately. Keep it up.</p>
+        <p className="font-bold text-good"><Icon icon={Check} /> Clean lately. Keep it up.</p>
       ) : (
-        <p className="rounded-xl border-l-4 border-s1 bg-panel2 px-4 py-2">
-          <b className="text-s1">🎯 Next game: </b>
+        <p className="rounded-xl border-l-4 border-accent bg-panel2 px-4 py-2">
+          <b className="text-accent"><Icon icon={Target} /> Next game: </b>
           {habit.do_next}
         </p>
       )}
-      <Link to="/trends" className="font-bold text-s1 hover:underline">
+      <Link to="/trends" className="font-bold text-accent hover:underline">
         See it per game →
       </Link>
     </section>

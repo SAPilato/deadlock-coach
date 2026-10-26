@@ -3,6 +3,7 @@ import { api, type Report, type TimelineEvent } from "../lib/api";
 import { clock } from "../lib/format";
 import Minimap, { type Marker } from "./Minimap";
 import SoulsChart from "./SoulsChart";
+import { useThemeColors } from "../lib/theme";
 
 const ALLY = "#3987e5";
 const ENEMY = "#d95926";
@@ -13,18 +14,18 @@ const ROWS: { key: string; label: string; types: TimelineEvent["type"][] }[] = [
   { key: "items", label: "Items", types: ["item"] },
 ];
 
-function eventStyle(e: TimelineEvent): { icon: string; color: string } {
+function eventStyle(e: TimelineEvent, other: string): { icon: string; color: string } {
   switch (e.type) {
     case "kill":
       return { icon: "●", color: ALLY };
     case "death":
-      return { icon: "✖", color: "#d03b3b" };
+      return { icon: "✕", color: "#d03b3b" };
     case "objective":
       return { icon: "◆", color: e.side === "ally" ? ALLY : ENEMY };
     case "midboss":
       return { icon: "★", color: e.side === "ally" ? ALLY : ENEMY };
     default:
-      return { icon: "•", color: "#c3c2b7" };
+      return { icon: "•", color: other };
   }
 }
 
@@ -37,6 +38,7 @@ export default function Timeline({
   time: number | null;
   setTime: (t: number) => void;
 }) {
+  const c = useThemeColors();
   const duration = report.timeline.duration_s;
   const t = time ?? 0;
   const paths = useQuery({ queryKey: ["paths", report.match.id], queryFn: () => api.paths(report.match.id, 5) });
@@ -74,7 +76,7 @@ export default function Timeline({
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dim" aria-hidden>
           <span><span style={{ color: ALLY }}>●</span> Your kill</span>
-          <span><span style={{ color: "#d03b3b" }}>✖</span> Your death</span>
+          <span><span style={{ color: "#d03b3b" }}>✕</span> Your death</span>
           <span><span style={{ color: ALLY }}>◆</span> Your team took it</span>
           <span><span style={{ color: ENEMY }}>◆</span> Enemy took it</span>
           <span>★ Mid Boss</span>
@@ -88,7 +90,7 @@ export default function Timeline({
                 {report.timeline.events
                   .filter((e) => row.types.includes(e.type))
                   .map((e, i) => {
-                    const s = eventStyle(e);
+                    const s = eventStyle(e, c.dim);
                     return (
                       <button
                         key={`${row.key}${i}`}
@@ -123,7 +125,7 @@ export default function Timeline({
             step={5}
             value={t}
             onChange={(e) => setTime(Number(e.target.value))}
-            className="mt-2 w-full accent-[#3987e5]"
+            className="mt-2 w-full accent-accent"
             aria-label="Match time"
           />
         </label>
@@ -135,7 +137,7 @@ export default function Timeline({
           ) : (
             <ul className="space-y-1">
               {near.map((e, i) => {
-                const s = eventStyle(e);
+                const s = eventStyle(e, c.dim);
                 return (
                   <li key={i}>
                     <span style={{ color: s.color }} aria-hidden>
@@ -156,7 +158,7 @@ export default function Timeline({
           <span><span style={{ color: ALLY }}>●</span> Your team</span>
           <span><span style={{ color: ENEMY }}>●</span> Enemies</span>
           <span>◎ You (white ring)</span>
-          <span>✖ Dead</span>
+          <span>✕ Dead</span>
         </div>
         <Minimap map={report.map} markers={markers} caption={`Positions at ${clock(t)}. Hover a dot for the hero.`} />
       </div>

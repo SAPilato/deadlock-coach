@@ -1,12 +1,156 @@
 @import "@fontsource/atkinson-hyperlegible/400.css";
 @import "@fontsource/atkinson-hyperlegible/700.css";
+@import "@fontsource/cinzel/700.css";
+@import "@fontsource/eb-garamond/700.css";
+@import "@fontsource/chakra-petch/600.css";
+@import "@fontsource/chakra-petch/700.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* Themes: Settings -> Look, or ?theme=<id> on any page. lib/theme.ts lists them.
+   Each sets the same variables; body text stays Atkinson Hyperlegible in all of them.
+   Text colours were checked for 4.5:1+ on bg, panel and panel2. */
+:root,
+[data-theme="slate"] {
   color-scheme: dark;
+  --c-bg: 14 16 20;
+  --c-panel: 23 26 33;
+  --c-panel2: 31 35 44;
+  --c-line: 46 52 64;
+  --c-ink: 244 245 247;
+  --c-dim: 195 194 183;
+  --c-muted: 154 152 144;
+  --c-accent: 81 153 236;
+  --c-onaccent: 7 17 31;
+  --c-high: 232 100 100;
+  --c-med: 236 131 90;
+  --c-low: 250 178 25;
+  --c-good: 34 179 34;
+  --c-s1: 57 135 229;
+  --c-s2: 217 89 38;
+  --c-s3: 25 158 112;
+  --c-neg: 230 103 103;
+  --c-cw: 217 89 38;
+  --c-cv: 25 158 112;
+  --c-cs: 144 133 233;
+  --font-body: "Atkinson Hyperlegible", system-ui, "Segoe UI", sans-serif;
+  --font-display: "Atkinson Hyperlegible", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display-tracking: 0;
+  --display-case: none;
+  --r-lg: 10px;
+  --r-xl: 12px;
+  --r-2xl: 16px;
+  --r-chip: 9999px;
+  --card-shadow: none;
+  --primary-shadow: none;
+  --page-texture: none;
+}
+
+[data-theme="deco"] {
+  color-scheme: dark;
+  --c-bg: 13 11 8;
+  --c-panel: 23 20 15;
+  --c-panel2: 33 28 21;
+  --c-line: 74 61 39;
+  --c-ink: 244 234 211;
+  --c-dim: 210 196 164;
+  --c-muted: 164 151 123;
+  --c-accent: 212 168 75;
+  --c-onaccent: 27 20 6;
+  --c-high: 232 100 100;
+  --c-med: 236 131 90;
+  --c-low: 250 178 25;
+  --c-good: 34 179 34;
+  --c-s1: 57 135 229;
+  --c-s2: 217 89 38;
+  --c-s3: 25 158 112;
+  --c-neg: 230 103 103;
+  --c-cw: 217 89 38;
+  --c-cv: 25 158 112;
+  --c-cs: 144 133 233;
+  --font-body: "Atkinson Hyperlegible", system-ui, "Segoe UI", sans-serif;
+  --font-display: "Cinzel", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display-tracking: 0.03em;
+  --display-case: none;
+  --r-lg: 2px;
+  --r-xl: 3px;
+  --r-2xl: 4px;
+  --r-chip: 3px;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(212 168 75 / 0.10), transparent 60%);
+}
+
+[data-theme="casefile"] {
+  color-scheme: light;
+  --c-bg: 233 223 201;
+  --c-panel: 248 242 228;
+  --c-panel2: 239 229 208;
+  --c-line: 201 185 148;
+  --c-ink: 29 24 19;
+  --c-dim: 70 61 49;
+  --c-muted: 102 90 72;
+  --c-accent: 142 44 29;
+  --c-onaccent: 255 248 234;
+  --c-high: 168 38 38;
+  --c-med: 156 65 24;
+  --c-low: 125 84 0;
+  --c-good: 30 107 30;
+  --c-s1: 42 120 214;
+  --c-s2: 196 82 30;
+  --c-s3: 19 134 93;
+  --c-neg: 192 59 59;
+  --c-cw: 180 74 28;
+  --c-cv: 18 128 90;
+  --c-cs: 91 75 200;
+  --font-body: "Atkinson Hyperlegible", system-ui, "Segoe UI", sans-serif;
+  --font-display: "EB Garamond", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display-tracking: 0;
+  --display-case: none;
+  --r-lg: 3px;
+  --r-xl: 4px;
+  --r-2xl: 6px;
+  --r-chip: 4px;
+  --card-shadow: 0 1px 0 rgb(80 60 20 / 0.08), 0 10px 24px -16px rgb(80 50 10 / 0.45);
+  --primary-shadow: none;
+  --page-texture: radial-gradient(ellipse at 15% 0%, rgb(255 252 240 / 0.7), transparent 55%), radial-gradient(ellipse at 90% 100%, rgb(150 110 50 / 0.12), transparent 50%);
+}
+
+[data-theme="hud"] {
+  color-scheme: dark;
+  --c-bg: 6 8 12;
+  --c-panel: 12 17 24;
+  --c-panel2: 18 26 36;
+  --c-line: 30 43 58;
+  --c-ink: 232 244 255;
+  --c-dim: 168 188 205;
+  --c-muted: 129 149 168;
+  --c-accent: 45 212 230;
+  --c-onaccent: 3 20 24;
+  --c-high: 232 100 100;
+  --c-med: 236 131 90;
+  --c-low: 250 178 25;
+  --c-good: 34 179 34;
+  --c-s1: 57 135 229;
+  --c-s2: 217 89 38;
+  --c-s3: 25 158 112;
+  --c-neg: 230 103 103;
+  --c-cw: 217 89 38;
+  --c-cv: 25 158 112;
+  --c-cs: 144 133 233;
+  --font-body: "Atkinson Hyperlegible", system-ui, "Segoe UI", sans-serif;
+  --font-display: "Chakra Petch", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --display-tracking: 0.02em;
+  --display-case: uppercase;
+  --r-lg: 2px;
+  --r-xl: 2px;
+  --r-2xl: 3px;
+  --r-chip: 2px;
+  --card-shadow: inset 0 2px 0 rgb(var(--c-accent) / 0.55);
+  --primary-shadow: 0 0 18px rgb(var(--c-accent) / 0.35);
+  --page-texture: linear-gradient(rgb(45 212 230 / 0.035) 1px, transparent 1px) 0 0 / 100% 32px;
 }
 
 /* 18px base: every rem in the app scales from here. */
@@ -16,27 +160,40 @@ html {
 
 body {
   @apply bg-bg text-ink font-sans antialiased;
+  background-image: var(--page-texture);
+  background-attachment: fixed;
   line-height: 1.55;
 }
 
+/* Display font for page and section titles only. Sentences (finding headlines, h3) stay in the body font. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-case);
+}
+
 :focus-visible {
-  outline: 3px solid #3987e5;
+  outline: 3px solid rgb(var(--c-accent));
   outline-offset: 2px;
   border-radius: 6px;
 }
 
 @layer components {
   .card {
-    @apply bg-panel border border-line rounded-2xl p-5;
+    @apply bg-panel border border-line rounded-2xl p-5 text-ink;
+    box-shadow: var(--card-shadow);
   }
   .btn {
-    @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 font-bold bg-panel2 border border-line text-ink hover:border-s1 disabled:opacity-50;
+    @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 font-bold bg-panel2 border border-line text-ink hover:border-accent disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-s1 border-s1 text-white hover:brightness-110;
+    @apply btn bg-accent border-accent text-onaccent hover:brightness-110;
+    box-shadow: var(--primary-shadow);
   }
   .chip {
-    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm bg-panel2 border border-line;
+    @apply inline-flex items-center gap-1 px-3 py-1 text-sm bg-panel2 border border-line;
+    border-radius: var(--r-chip);
   }
   .label {
     @apply text-sm uppercase tracking-wide text-muted font-bold;

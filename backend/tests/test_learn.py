@@ -1,5 +1,6 @@
 """Lessons: readable, linked to findings, numbers from data."""
 import re
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -41,6 +42,7 @@ def test_lesson_cards_are_short(lesson):
     # Coaching text carries no game numbers; those come from facts.py.
     assert not re.search(r"\d", " ".join([lesson["summary"], *lesson["points"]])), lesson["id"]
     assert lesson["try"]["href"].startswith(("/map", "/build"))
+    assert re.fullmatch(r"[a-z]+(-[a-z]+)*", lesson["icon"]), "icons are names, not emojis"
 
 
 @pytest.fixture(scope="module")
@@ -72,3 +74,10 @@ def test_try_links_open_real_map_views(api):
         if url.path == "/map":
             assert q["mode"][0] in MAP_MODES, lesson["id"]
             assert set(q.get("layers", [""])[0].split(",")) - {""} <= layer_ids, lesson["id"]
+
+
+def test_lesson_icons_exist_in_the_frontend():
+    src = (Path(__file__).parents[2] / "frontend/src/components/LessonIcon.tsx").read_text(encoding="utf-8")
+    block = src.split("const ICONS", 1)[1].split("};", 1)[0]
+    names = set(re.findall(r'^\s*"?([a-z-]+)"?:', block, re.M))
+    assert {x["icon"] for x in LESSONS} <= names

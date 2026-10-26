@@ -2,7 +2,8 @@ import { useRef } from "react";
 import type { HeroCard, SavedBuild } from "../../lib/api";
 import { api } from "../../lib/api";
 import { ago } from "../../lib/format";
-import { HeroIcon } from "../ui";
+import { HeroIcon, Icon } from "../ui";
+import { ArrowLeftRight, Download, Trash2, Upload } from "lucide-react";
 
 export default function SavedBuilds({
   builds,
@@ -43,7 +44,7 @@ export default function SavedBuilds({
           }}
         />
         <button type="button" className="btn" onClick={() => file.current?.click()}>
-          ⬆ Import build file
+          <Icon icon={Upload} /> Import build file
         </button>
       </div>
       {builds.length === 0 ? (
@@ -56,7 +57,7 @@ export default function SavedBuilds({
               <li
                 key={b.id}
                 className={`flex flex-wrap items-center gap-3 rounded-xl border bg-panel2 p-3 ${
-                  b.id === currentId ? "border-s1" : "border-line"
+                  b.id === currentId ? "border-accent" : "border-line"
                 }`}
               >
                 {hero && <HeroIcon hero={hero} size={36} />}
@@ -67,22 +68,22 @@ export default function SavedBuilds({
                   </div>
                 </div>
                 <div className="ml-auto flex flex-wrap gap-2">
-                  <button type="button" className="chip hover:border-s1" onClick={() => onLoad(b)}>
+                  <button type="button" className="chip hover:border-accent" onClick={() => onLoad(b)}>
                     Open
                   </button>
                   <button
                     type="button"
-                    className={`chip hover:border-s1 ${compareId === b.id ? "border-s1 text-s1" : ""}`}
+                    className={`chip hover:border-accent ${compareId === b.id ? "border-accent text-accent" : ""}`}
                     onClick={() => onCompare(compareId === b.id ? null : b.id)}
                     aria-pressed={compareId === b.id}
                   >
-                    ⇄ Compare
+                    <Icon icon={ArrowLeftRight} /> Compare
                   </button>
-                  <a className="chip hover:border-s1" href={api.exportUrl(b.id)} download>
-                    ⬇ Export
+                  <a className="chip hover:border-accent" href={api.exportUrl(b.id)} download>
+                    <Icon icon={Download} /> Export
                   </a>
                   <button type="button" className="chip hover:border-high" onClick={() => onDelete(b)}>
-                    🗑 Delete
+                    <Icon icon={Trash2} /> Delete
                   </button>
                 </div>
               </li>

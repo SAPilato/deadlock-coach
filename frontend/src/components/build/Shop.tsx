@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import type { ShopData, ShopItem, SlotType } from "../../lib/api";
 import { clock } from "../../lib/format";
 import { CATEGORY, SLOT_TYPES, souls } from "./common";
+import { Check } from "lucide-react";
+import { Icon } from "../ui";
 
 type Sort = "tier" | "win" | "pick";
 
@@ -47,17 +49,17 @@ export default function Shop({
               onClick={() => setCat(s)}
               className={`rounded-xl border-2 px-4 py-2 font-bold ${on ? `${c.border} bg-panel2 ${c.text}` : "border-line text-dim"}`}
             >
-              <span aria-hidden>{c.icon}</span> {c.label}
+              <Icon icon={c.icon} /> {c.label}
             </button>
           );
         })}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={`chip ${tier == null ? "border-s1" : ""}`} onClick={() => setTier(null)}>
+        <button type="button" className={`chip ${tier == null ? "border-accent" : ""}`} onClick={() => setTier(null)}>
           All tiers
         </button>
         {tiers.map((t) => (
-          <button key={t} type="button" className={`chip ${tier === t ? "border-s1" : ""}`} onClick={() => setTier(t)}>
+          <button key={t} type="button" className={`chip ${tier === t ? "border-accent" : ""}`} onClick={() => setTier(t)}>
             Tier {t}
           </button>
         ))}
@@ -102,7 +104,7 @@ export default function Shop({
                 onFocus={() => onPreview(owned ? null : it.id)}
                 onBlur={() => onPreview(null)}
                 className={`flex w-full gap-3 rounded-xl border bg-panel2 p-3 text-left ${
-                  owned ? "border-good opacity-70" : "border-line hover:border-s1"
+                  owned ? "border-good opacity-70" : "border-line hover:border-accent"
                 } disabled:cursor-not-allowed`}
               >
                 {it.image && <img src={it.image} alt="" className="h-12 w-12 shrink-0 rounded-md" />}
@@ -128,7 +130,7 @@ export default function Shop({
                   </span>
                   {it.lines.length > 0 && <span className="block text-sm text-dim truncate">{it.lines.join(" · ")}</span>}
                 </span>
-                <span className="self-center text-sm font-bold text-s1">{owned ? "✓" : "+ Add"}</span>
+                <span className="self-center text-sm font-bold text-accent">{owned ? <Icon icon={Check} /> : "+ Add"}</span>
               </button>
             </li>
           );

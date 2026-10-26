@@ -1,7 +1,8 @@
 import type { Finding } from "../lib/api";
 import { clock, evidenceValue } from "../lib/format";
-import { EstTag, More, ReadAloud, SevBadge, sevStripe } from "./ui";
+import { EstTag, Icon, More, ReadAloud, SevBadge, sevStripe } from "./ui";
 import LessonLink from "./LessonLink";
+import { Play, Target } from "lucide-react";
 
 export default function FindingCard({ finding, onMoment }: { finding: Finding; onMoment?: (t: number) => void }) {
   const lead = finding.evidence[0];
@@ -29,8 +30,8 @@ export default function FindingCard({ finding, onMoment }: { finding: Finding; o
         )}
         <div className="flex-1 min-w-[14rem] space-y-3">
           <h3 className="text-xl font-bold">{finding.headline}</h3>
-          <p className="rounded-xl bg-panel2 border-l-4 border-s1 px-4 py-2">
-            <span className="font-bold text-s1">🎯 Next game: </span>
+          <p className="rounded-xl bg-panel2 border-l-4 border-accent px-4 py-2">
+            <span className="font-bold text-accent"><Icon icon={Target} /> Next game: </span>
             {finding.do_next}
           </p>
           <LessonLink id={finding.lesson_id} />
@@ -69,11 +70,11 @@ export default function FindingCard({ finding, onMoment }: { finding: Finding; o
                   <button
                     key={`${m.t}-${i}`}
                     type="button"
-                    className="chip hover:border-s1"
+                    className="chip hover:border-accent"
                     onClick={() => onMoment(m.t)}
                     title="Show this moment on the timeline and map"
                   >
-                    <span aria-hidden>▶</span> {clock(m.t)} {m.label}
+                    <Icon icon={Play} /> {clock(m.t)} {m.label}
                   </button>
                 ))}
               </div>

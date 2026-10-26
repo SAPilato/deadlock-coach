@@ -42,7 +42,7 @@ function glyph(p: MapPoint): { ch: string; color: string; size: number } {
     case "crate":
       return { ch: "•", color: DIM, size: 18 };
     case "tough_crate":
-      return { ch: "▪", color: INK, size: 18 };
+      return { ch: "■", color: INK, size: 16 };
     case "buff":
       return { ch: "✚", color: INK, size: 22 };
     case "healing":
@@ -66,7 +66,7 @@ const LEGEND: Record<string, string> = {
   districts: "Aa",
   shops: "$",
   statues: "✦",
-  crates: "• ▪",
+  crates: "• ■",
   healing: "✚",
   vents: "≋",
   veils: "◌",
@@ -154,7 +154,7 @@ export default function ExploreMode() {
             {d.layers.map((layer) => (
               <li key={layer.id}>
                 <label className="flex cursor-pointer items-center gap-3">
-                  <input type="checkbox" checked={on.has(layer.id)} onChange={() => toggle(layer.id)} className="h-5 w-5 accent-[#3987e5]" />
+                  <input type="checkbox" checked={on.has(layer.id)} onChange={() => toggle(layer.id)} className="h-5 w-5 accent-accent" />
                   <span className="w-24 shrink-0 text-center text-dim" aria-hidden>
                     {layer.id === "lanes" ? "━" : LEGEND[layer.id]}
                   </span>
@@ -177,7 +177,7 @@ export default function ExploreMode() {
                         return n;
                       })
                     }
-                    className="h-5 w-5 accent-[#3987e5]"
+                    className="h-5 w-5 accent-accent"
                   />
                   <span className="w-24 shrink-0 text-center text-dim" aria-hidden>▒</span>
                   <span>{o.label}</span>

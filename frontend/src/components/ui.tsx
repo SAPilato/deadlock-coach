@@ -2,6 +2,14 @@ import { ReactNode, useEffect, useId, useState } from "react";
 import type { HeroCard, RankInfo, Severity } from "../lib/api";
 import { evidenceValue, verdict } from "../lib/format";
 import { canSpeak, speak, stopSpeaking } from "../lib/speech";
+import { Check, Square, TriangleAlert, Volume2, X, type LucideIcon } from "lucide-react";
+
+/** A line icon sized to the text around it. Decorative: the text next to it says the same. */
+export function Icon({ icon: Glyph, className = "" }: { icon: LucideIcon; className?: string }) {
+  return (
+    <Glyph aria-hidden strokeWidth={2.25} className={`inline-block h-[1.1em] w-[1.1em] shrink-0 align-[-0.2em] ${className}`} />
+  );
+}
 
 export function ReadAloud({ text, label = "Read aloud" }: { text: string; label?: string }) {
   const [on, setOn] = useState(false);
@@ -10,7 +18,7 @@ export function ReadAloud({ text, label = "Read aloud" }: { text: string; label?
   return (
     <button
       type="button"
-      className="chip hover:border-s1"
+      className="chip hover:border-accent"
       aria-pressed={on}
       title={label}
       onClick={() => {
@@ -23,7 +31,7 @@ export function ReadAloud({ text, label = "Read aloud" }: { text: string; label?
         }
       }}
     >
-      <span aria-hidden>{on ? "■" : "🔊"}</span>
+      <Icon icon={on ? Square : Volume2} />
       <span className="sr-only sm:not-sr-only">{on ? "Stop" : "Read"}</span>
     </button>
   );
@@ -47,7 +55,7 @@ export function More({ children, label = "More" }: { children: ReactNode; label?
     <div>
       <button
         type="button"
-        className="text-s1 font-bold hover:underline"
+        className="text-accent font-bold hover:underline"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen(!open)}
@@ -112,16 +120,20 @@ export function RankBadge({ rank, size = 32 }: { rank: RankInfo | null; size?: n
 
 export function WinLoss({ won }: { won: boolean }) {
   return won ? (
-    <span className="chip border-good text-good font-bold">✓ Win</span>
+    <span className="chip border-good text-good font-bold">
+      <Icon icon={Check} /> Win
+    </span>
   ) : (
-    <span className="chip border-high text-high font-bold">✗ Loss</span>
+    <span className="chip border-high text-high font-bold">
+      <Icon icon={X} /> Loss
+    </span>
   );
 }
 
 export function Loading({ label = "Loading…" }: { label?: string }) {
   return (
     <div className="card flex items-center gap-3 text-dim" role="status">
-      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-s1 border-t-transparent" />
+      <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
       {label}
     </div>
   );
@@ -131,7 +143,9 @@ export function ErrorBox({ error }: { error: unknown }) {
   const msg = error instanceof Error ? error.message : String(error);
   return (
     <div className="card border-high" role="alert">
-      <p className="font-bold text-high">✗ Something went wrong</p>
+      <p className="font-bold text-high">
+        <Icon icon={TriangleAlert} /> Something went wrong
+      </p>
       <p className="text-dim">{msg}</p>
     </div>
   );
@@ -184,16 +198,21 @@ export function Section({
   title,
   children,
   aside,
+  icon,
 }: {
   id?: string;
   title: string;
   children: ReactNode;
   aside?: ReactNode;
+  icon?: LucideIcon;
 }) {
   return (
     <section id={id} className="card scroll-mt-24 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="flex items-center gap-2 text-2xl font-bold">
+          {icon && <Icon icon={icon} className="text-accent" />}
+          {title}
+        </h2>
         {aside}
       </div>
       {children}

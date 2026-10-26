@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Report } from "../lib/api";
+import { Amphora, Download, Film, Hourglass, TriangleAlert, Upload } from "lucide-react";
+import { Icon } from "./ui";
 
 const BUSY = ["downloading", "parsing", "queued"];
 
@@ -31,13 +33,19 @@ export default function ReplayBox({ report }: { report: Report }) {
   return (
     <div className="space-y-3">
       <ul className="space-y-1 text-dim">
-        <li>🏺 Adds the urn check.</li>
-        <li>🎞 Replays come from the in-game match history.</li>
-        <li>⏳ Valve deletes old replays after a while.</li>
+        <li>
+          <Icon icon={Amphora} /> Adds the urn check.
+        </li>
+        <li>
+          <Icon icon={Film} /> Replays come from the in-game match history.
+        </li>
+        <li>
+          <Icon icon={Hourglass} /> Valve deletes old replays after a while.
+        </li>
       </ul>
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className="btn-primary" onClick={() => fetchDemo.mutate()} disabled={BUSY.includes(s) || fetchDemo.isPending}>
-          ⬇ Try auto-download
+          <Icon icon={Download} /> Try auto-download
         </button>
         <input
           ref={file}
@@ -50,14 +58,15 @@ export default function ReplayBox({ report }: { report: Report }) {
           }}
         />
         <button type="button" className="btn" onClick={() => file.current?.click()} disabled={BUSY.includes(s) || upload.isPending}>
-          ⬆ Upload .dem file
+          <Icon icon={Upload} /> Upload .dem file
         </button>
         <span className="chip">
           Status: <b className="ml-1">{s === "none" ? "no replay" : s}</b>
         </span>
       </div>
       {(status.data?.error || upload.error || fetchDemo.error) && (
-        <p className="text-high">✗ {status.data?.error || String(upload.error || fetchDemo.error)}</p>
+        <p className="text-high">
+          <Icon icon={TriangleAlert} /> {status.data?.error || String(upload.error || fetchDemo.error)}</p>
       )}
     </div>
   );

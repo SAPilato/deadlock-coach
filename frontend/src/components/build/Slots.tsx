@@ -1,5 +1,7 @@
 import type { ShopItem } from "../../lib/api";
 import { CATEGORY, souls } from "./common";
+import { X } from "lucide-react";
+import { Icon } from "../ui";
 
 export default function Slots({
   items,
@@ -45,7 +47,7 @@ export default function Slots({
                 {it.image && <img src={it.image} alt="" className="h-10 w-10 rounded-md" />}
                 <span className="text-xs text-center leading-tight">{it.name}</span>
                 <span className="absolute right-1 top-0.5 text-sm text-muted group-hover:text-high" aria-hidden>
-                  ✕
+                  <Icon icon={X} />
                 </span>
               </button>
             </li>

@@ -1,6 +1,7 @@
 import type { Sheet, Target } from "../../lib/api";
 import { num } from "../../lib/format";
-import { EstTag } from "../ui";
+import { EstTag, Icon } from "../ui";
+import { Crosshair, Shield, Target as TargetIcon } from "lucide-react";
 
 function Slider({
   label,
@@ -35,7 +36,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-[#3987e5]"
+        className="w-full accent-accent"
       />
     </label>
   );
@@ -96,12 +97,14 @@ export default function Dummy({
             <Big label="Gun DPS with reloads" value={num(d.dps_reload, 1)} />
           </div>
           <ul className="space-y-1 text-sm text-dim">
-            <li>🎯 Headshots deal ×{num(d.headshot_mult, 2)} (weapon data). Close range, no falloff.</li>
             <li>
-              🛡 Dummy resist after your shred: <b className="text-ink">{num(d.target_resist, 1)}%</b>
+          <Icon icon={TargetIcon} /> Headshots deal ×{num(d.headshot_mult, 2)} (weapon data). Close range, no falloff.</li>
+            <li>
+              <Icon icon={Shield} /> Dummy resist after your shred: <b className="text-ink">{num(d.target_resist, 1)}%</b>
               {d.shred > 0 && <> (shred {num(d.shred, 1)}%)</>}
             </li>
-            <li>🔫 Gun only. Ability and item damage are not counted.</li>
+            <li>
+          <Icon icon={Crosshair} /> Gun only. Ability and item damage are not counted.</li>
           </ul>
         </div>
       )}

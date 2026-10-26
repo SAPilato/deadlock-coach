@@ -141,7 +141,7 @@ export default function RouteMode() {
               aria-selected={mode === id}
               type="button"
               onClick={() => setMode(id)}
-              className={`rounded-xl border-2 px-4 py-2 font-bold ${mode === id ? "border-s1 bg-panel2" : "border-line text-dim"}`}
+              className={`rounded-xl border-2 px-4 py-2 font-bold ${mode === id ? "border-accent bg-panel2" : "border-line text-dim"}`}
             >
               {label}
             </button>

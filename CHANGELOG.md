@@ -4,6 +4,22 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (look and feel)
+- Four themes in Settings → Look: Slate, Brass Deco, Case File (light) and Neon HUD.
+  Colours, heading font and corners change per theme; body text stays Atkinson
+  Hyperlegible. Text colours checked for 4.5:1 contrast in every theme. `?theme=` works on any page.
+- Line icons (lucide-react) replace every emoji. A test fails if one comes back.
+- Pages that hit an error now show a message instead of a blank screen.
+
+### Changed
+- Late game now starts at the first Base Guardian, not the first Walker. In 40 real
+  matches the first Walker fell ~40% of the way in, which labelled 60% of every match
+  "late". Affects the death map phases and the heatmap.
+
+### Fixed
+- Learn: opening a lesson crashed the page. The scroll-to-top effect returned
+  `scrollTo`'s Promise (newer browsers), which React then called as a cleanup.
+
 ### Added (Phase 4: Learn)
 - Learn page (`/learn`) with 11 short lessons in Lane, Map, Fights and Items.
   "For you" suggests the lessons for your flagged habits, focus habit first.

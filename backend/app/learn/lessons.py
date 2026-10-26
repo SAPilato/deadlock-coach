@@ -7,6 +7,7 @@ Rules for this file (checked by tests/test_learn.py):
 - every findings rule's `lesson_id` must exist here.
 `facts` lists keys resolved by facts.py from game data, measurements or replays.
 `try` links to the map layer or Build Lab view that shows the idea.
+`icon` names a line icon (frontend components/LessonIcon.tsx); no emojis.
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ LESSONS: list[dict] = [
         "id": "wave-management",
         "topic": "Lane",
         "title": "Wave management",
-        "icon": "🌊",
+        "icon": "waves",
         "summary": "Control where waves meet. A healthy wave gives you safe souls.",
         "points": [
             "Kill enemy troopers fast when your own wave is small.",
@@ -31,7 +32,7 @@ LESSONS: list[dict] = [
         "id": "slow-vs-fast-push",
         "topic": "Lane",
         "title": "Slow push vs fast push",
-        "icon": "⏩",
+        "icon": "fast-forward",
         "summary": "Choose how fast your wave moves. Each push sets up something different.",
         "points": [
             "Slow push: let waves stack, then hit the Guardian together.",
@@ -45,7 +46,7 @@ LESSONS: list[dict] = [
         "id": "freezing",
         "topic": "Lane",
         "title": "Freezing a wave",
-        "icon": "🧊",
+        "icon": "snowflake",
         "summary": "Keep the fight near your Guardian. The enemy must walk up to farm.",
         "points": [
             "Only last-hit. Do not shoot the whole wave down.",
@@ -59,7 +60,7 @@ LESSONS: list[dict] = [
         "id": "rotate-after-laning",
         "topic": "Map",
         "title": "When to rotate",
-        "icon": "🔄",
+        "icon": "repeat",
         "summary": "After your Guardian falls, the map matters more than your lane.",
         "points": [
             "Push your wave first, then move.",
@@ -73,7 +74,7 @@ LESSONS: list[dict] = [
         "id": "waves-and-camps",
         "topic": "Map",
         "title": "Camp and crate rotations",
-        "icon": "📦",
+        "icon": "package",
         "summary": "Farm between waves. Every minute should have a target.",
         "points": [
             "Clear a Haunt camp, then meet your next wave.",
@@ -87,7 +88,7 @@ LESSONS: list[dict] = [
         "id": "item-timing",
         "topic": "Items",
         "title": "Itemization principles",
-        "icon": "🛒",
+        "icon": "shopping-cart",
         "summary": "Spend souls early. Unspent souls do nothing in a fight.",
         "points": [
             "Buy your next item the moment you can afford it.",
@@ -101,7 +102,7 @@ LESSONS: list[dict] = [
         "id": "group-for-objectives",
         "topic": "Fights",
         "title": "When to take objectives",
-        "icon": "🏰",
+        "icon": "castle",
         "summary": "Objectives win games. Take them when the enemy cannot defend.",
         "points": [
             "After you win a fight, hit the nearest objective.",
@@ -115,7 +116,7 @@ LESSONS: list[dict] = [
         "id": "fight-with-team",
         "topic": "Fights",
         "title": "Fight with your team",
-        "icon": "🤝",
+        "icon": "handshake",
         "summary": "Many deaths happen alone. Move where your team can help.",
         "points": [
             "Check the minimap before you cross mid.",
@@ -129,7 +130,7 @@ LESSONS: list[dict] = [
         "id": "death-spots",
         "topic": "Fights",
         "title": "Avoid death spots",
-        "icon": "☠️",
+        "icon": "skull",
         "summary": "Dying in the same place twice is a pattern. Break it.",
         "points": [
             "Look at your death map after each game.",
@@ -143,7 +144,7 @@ LESSONS: list[dict] = [
         "id": "always-moving",
         "topic": "Map",
         "title": "Always have a target",
-        "icon": "🎯",
+        "icon": "footprints",
         "summary": "Every second out of combat should move you toward souls.",
         "points": [
             "Know your next wave, camp or fight.",
@@ -157,7 +158,7 @@ LESSONS: list[dict] = [
         "id": "urn",
         "topic": "Map",
         "title": "Urn fights",
-        "icon": "🏺",
+        "icon": "amphora",
         "summary": "The urn is a big soul swing. Plan for it before it spawns.",
         "points": [
             "Know which side it spawns on next.",

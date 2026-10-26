@@ -8,7 +8,8 @@ import ItemTiming from "../components/ItemTiming";
 import Minimap from "../components/Minimap";
 import ReplayBox from "../components/ReplayBox";
 import Timeline from "../components/Timeline";
-import { ErrorBox, EstTag, HeroIcon, Loading, More, RankBadge, Section, StatTile, WinLoss } from "../components/ui";
+import { ErrorBox, EstTag, HeroIcon, Icon, Loading, More, RankBadge, Section, StatTile, WinLoss } from "../components/ui";
+import { ChartColumn, Check, Film, FlaskConical, Route as RouteIcon, Search, ShoppingCart, Skull, Timer } from "lucide-react";
 
 const PHASE = {
   early: { color: "#3987e5", label: "Laning" },
@@ -46,7 +47,7 @@ export default function MatchReport() {
 
       <nav className="sticky top-[4.2rem] z-10 -mx-1 flex flex-wrap gap-2 bg-bg/95 py-2" aria-label="Report sections">
         {SECTIONS.map(([key, label]) => (
-          <a key={key} href={`#${key}`} className="chip hover:border-s1">
+          <a key={key} href={`#${key}`} className="chip hover:border-accent">
             {label}
           </a>
         ))}
@@ -54,22 +55,23 @@ export default function MatchReport() {
 
       <Findings r={r} onMoment={jump} />
 
-      <Section id="timeline" title="⏱ Timeline">
+      <Section id="timeline" icon={Timer} title="Timeline">
         <Timeline report={r} time={time} setTime={setTime} />
       </Section>
 
       <Benchmarks r={r} />
 
-      <Section id="deaths" title={`✖ Deaths: ${r.deaths.length}`}>
+      <Section id="deaths" icon={Skull} title={`Deaths: ${r.deaths.length}`}>
         <DeathMap r={r} onPick={jump} />
       </Section>
 
       <Section
         id="items"
-        title="🛒 Item timing vs your rank"
+        icon={ShoppingCart}
+          title="Item timing vs your rank"
         aside={
           <Link to={`/build?match=${r.match.id}`} className="btn">
-            🧪 Open this build in Build Lab
+            <Icon icon={FlaskConical} /> Open this build in Build Lab
           </Link>
         }
       >
@@ -78,7 +80,7 @@ export default function MatchReport() {
 
       <Lane r={r} />
 
-      <Section id="replay" title="🎞 Replay file (optional)">
+      <Section id="replay" icon={Film} title="Replay file (optional)">
         <ReplayBox report={r} />
       </Section>
     </div>
@@ -117,7 +119,7 @@ function Header({ r }: { r: Report }) {
           </div>
         )}
       </div>
-      <Link to="/matches" className="w-full text-s1 hover:underline">
+      <Link to="/matches" className="w-full text-accent hover:underline">
         ← All matches
       </Link>
     </div>
@@ -139,7 +141,7 @@ function Findings({ r, onMoment }: { r: Report; onMoment: (t: number) => void })
   return (
     <section id="findings" className="space-y-4 scroll-mt-24">
       <h2 className="text-2xl font-bold">
-        🔎 {r.findings.length === 0 ? "No problems found" : `${r.findings.length} thing${r.findings.length > 1 ? "s" : ""} to fix`}
+        <Icon icon={Search} className="text-accent" /> {r.findings.length === 0 ? "No problems found" : `${r.findings.length} thing${r.findings.length > 1 ? "s" : ""} to fix`}
       </h2>
       {top.map((f) => (
         <FindingCard key={f.rule_id} finding={f} onMoment={onMoment} />
@@ -156,7 +158,7 @@ function Findings({ r, onMoment }: { r: Report; onMoment: (t: number) => void })
           <span className="label">Good this game:</span>
           {r.passed.map((p) => (
             <span key={p.rule_id} className="chip border-good text-good">
-              ✓ {p.habit}
+              <Icon icon={Check} /> {p.habit}
             </span>
           ))}
         </div>
@@ -180,7 +182,8 @@ function Benchmarks({ r }: { r: Report }) {
   return (
     <Section
       id="benchmarks"
-      title="📊 You vs your rank"
+      icon={ChartColumn}
+        title="You vs your rank"
       aside={b.bracket && <span className="text-dim">Same hero · badges {b.bracket[0]}–{b.bracket[1]} · last 30 days</span>}
     >
       {!b.available ? (
@@ -204,7 +207,7 @@ function Benchmarks({ r }: { r: Report }) {
 }
 
 function DeathMap({ r, onPick }: { r: Report; onPick: (t: number) => void }) {
-  if (r.deaths.length === 0) return <p className="text-good font-bold">✓ You never died. Great job.</p>;
+  if (r.deaths.length === 0) return <p className="text-good font-bold"><Icon icon={Check} /> You never died. Great job.</p>;
   const counts = { early: 0, mid: 0, late: 0 };
   r.deaths.forEach((d) => counts[d.phase]++);
   return (
@@ -232,9 +235,11 @@ function DeathMap({ r, onPick }: { r: Report; onPick: (t: number) => void }) {
           ))}
         </ul>
         <p className="text-sm text-muted">
-          Laning ends when the Guardian in your lane falls ({clock(r.phases.laning_end)}). Late game starts at the first
-          Walker ({clock(r.phases.mid_end)}).
-          {r.phases.est && <EstTag title="One of these objectives never fell, so a default time is used." />}
+          Laning ends when the Guardian in your lane falls ({clock(r.phases.laning_end)}).{" "}
+          {r.phases.mid_end < r.match.duration_s
+            ? `Late game starts when the first Base Guardian falls (${clock(r.phases.mid_end)}).`
+            : "No Base Guardian fell, so there was no late game."}
+          {r.phases.est && <EstTag title="Your lane's Guardian never fell, so a default time is used." />}
         </p>
       </div>
     </div>
@@ -246,7 +251,8 @@ function Lane({ r }: { r: Report }) {
   return (
     <Section
       id="lane"
-      title={`🛣 Lane phase${l.lane ? `: ${l.lane.name}` : ""}`}
+      icon={RouteIcon}
+      title={`Lane phase${l.lane ? `: ${l.lane.name}` : ""}`}
       aside={
         <span className="text-dim">
           Ends {clock(l.laning_end)}

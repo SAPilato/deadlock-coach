@@ -1,6 +1,7 @@
 import type { Sheet } from "../../lib/api";
 import { num, statDelta } from "../../lib/format";
-import { EstTag } from "../ui";
+import { EstTag, Icon } from "../ui";
+import { Shield, Timer } from "lucide-react";
 
 const SCALING: Record<string, string> = {
   EWeaponPower: "weapon damage",
@@ -40,7 +41,7 @@ export default function Abilities({
                 role="radio"
                 aria-checked={tier === t}
                 onClick={() => onTier(t)}
-                className={`h-10 w-10 rounded-lg border-2 font-bold ${tier === t ? "border-s1 bg-panel2" : "border-line text-dim"}`}
+                className={`h-10 w-10 rounded-lg border-2 font-bold ${tier === t ? "border-accent bg-panel2" : "border-line text-dim"}`}
               >
                 {t}
               </button>
@@ -59,7 +60,7 @@ export default function Abilities({
             step={1}
             value={spiritResist}
             onChange={(e) => onSpiritResist(Number(e.target.value))}
-            className="w-full accent-[#3987e5]"
+            className="w-full accent-accent"
           />
         </label>
       </div>
@@ -68,14 +69,15 @@ export default function Abilities({
           ✦ Spirit power <b className="ml-1 tnum">{num(spirit, 1)}</b>
         </span>
         <span className="chip">
-          ⟳ Cooldown −<b className="tnum">{num(cdr, 1)}%</b>
+          <Icon icon={Timer} /> Cooldown −<b className="tnum">{num(cdr, 1)}%</b>
         </span>
         {amp !== 1 && (
           <span className="chip">
             × Spirit damage <b className="ml-1 tnum">{num(amp, 2)}</b>
           </span>
         )}
-        {sheet.dps.spirit_shred > 0 && <span className="chip">🛡 Shred −{num(sheet.dps.spirit_shred, 1)}%</span>}
+        {sheet.dps.spirit_shred > 0 && <span className="chip">
+            <Icon icon={Shield} /> Shred −{num(sheet.dps.spirit_shred, 1)}%</span>}
       </div>
 
       <ul className="grid gap-3 md:grid-cols-2">
@@ -86,7 +88,7 @@ export default function Abilities({
               <span className="text-lg font-bold">{a.name}</span>
               {a.cooldown != null && (
                 <span className="ml-auto text-dim tnum" title="Cooldown: no items → this build">
-                  ⟳ {num(a.cooldown_base, 1)} → <b className="text-ink">{num(a.cooldown, 1)} s</b>
+                  <Icon icon={Timer} /> {num(a.cooldown_base, 1)} → <b className="text-ink">{num(a.cooldown, 1)} s</b>
                 </span>
               )}
             </div>

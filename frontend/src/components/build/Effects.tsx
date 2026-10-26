@@ -56,7 +56,7 @@ export default function Effects({
                     type="checkbox"
                     checked={on}
                     onChange={() => onToggle(e.key)}
-                    className="h-5 w-5 accent-[#3987e5]"
+                    className="h-5 w-5 accent-accent"
                   />
                   <span>
                     <b className="tnum">{valueText(e)}</b> {e.label}

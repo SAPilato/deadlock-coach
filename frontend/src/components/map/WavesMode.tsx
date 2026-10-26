@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type WavesData } from "../../lib/api";
 import { ago, clock } from "../../lib/format";
 import { pointAt } from "../../lib/geo";
-import { ErrorBox, HeroIcon, Loading } from "../ui";
+import { ErrorBox, HeroIcon, Icon, Loading } from "../ui";
 import MapCanvas, { Lanes, S, SURFACE, TEAM_COLORS } from "./MapCanvas";
+import { Pause, Play } from "lucide-react";
 
 const MID = 0.05; // within 5% of the lane's middle counts as "middle"
 
@@ -100,7 +101,15 @@ export default function WavesMode() {
         </MapCanvas>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className="btn-primary" onClick={() => setPlaying(!playing)} aria-pressed={playing}>
-            {playing ? "❚❚ Pause" : "▶ Play"}
+            {playing ? (
+            <>
+              <Icon icon={Pause} /> Pause
+            </>
+          ) : (
+            <>
+              <Icon icon={Play} /> Play
+            </>
+          )}
           </button>
           <span className="text-3xl font-bold tnum">{clock(t)}</span>
           {next != null && <span className="chip">Next wave in {Math.round(next)} s</span>}
@@ -112,7 +121,7 @@ export default function WavesMode() {
           step={d.step}
           value={t}
           onChange={(e) => setT(Number(e.target.value))}
-          className="w-full accent-[#3987e5]"
+          className="w-full accent-accent"
           aria-label="Match time"
         />
       </div>

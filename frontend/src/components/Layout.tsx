@@ -1,16 +1,19 @@
 import { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { BookOpen, Eye, FlaskConical, House, List, Map as MapIcon, Settings as SettingsIcon, TrendingUp, TriangleAlert } from "lucide-react";
+import { Icon } from "./ui";
+import ErrorBoundary from "./ErrorBoundary";
 
 const NAV = [
-  { to: "/", label: "Home", icon: "⌂" },
-  { to: "/matches", label: "Matches", icon: "▤" },
-  { to: "/trends", label: "Trends", icon: "↗" },
-  { to: "/build", label: "Build Lab", icon: "🧪" },
-  { to: "/map", label: "Map", icon: "🗺" },
-  { to: "/learn", label: "Learn", icon: "📚" },
-  { to: "/settings", label: "Settings", icon: "⚙" },
+  { to: "/", label: "Home", icon: House },
+  { to: "/matches", label: "Matches", icon: List },
+  { to: "/trends", label: "Trends", icon: TrendingUp },
+  { to: "/build", label: "Build Lab", icon: FlaskConical },
+  { to: "/map", label: "Map", icon: MapIcon },
+  { to: "/learn", label: "Learn", icon: BookOpen },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 function PatchBanner() {
@@ -26,7 +29,7 @@ function PatchBanner() {
       </span>
       {patch.stale && (
         <Link to="/settings" className="chip border-low text-low font-bold">
-          ⚠ New patch {patch.live_build}. Refresh data
+          <Icon icon={TriangleAlert} /> New patch {patch.live_build}. Refresh data
         </Link>
       )}
       {data.offline && <span className="chip border-low text-low">Offline</span>}
@@ -40,8 +43,8 @@ function SampleBanner() {
   return (
     <div className="bg-panel2 border-b border-line">
       <div className="mx-auto max-w-6xl px-4 py-2 text-dim">
-        👀 Showing a sample player.{" "}
-        <Link to="/settings" className="text-s1 font-bold hover:underline">
+        <Icon icon={Eye} /> Showing a sample player.{" "}
+        <Link to="/settings" className="text-accent font-bold hover:underline">
           Add your Steam ID →
         </Link>
       </div>
@@ -50,12 +53,13 @@ function SampleBanner() {
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur border-b border-line">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Link to="/" className="text-xl font-bold tracking-tight">
-            <span className="text-s1">◆</span> Deadlock Coach
+          <Link to="/" className="font-display text-xl font-bold tracking-tight">
+            <span className="text-accent">◆</span> Deadlock Coach
           </Link>
           <nav className="flex flex-wrap gap-1" aria-label="Main">
             {NAV.map((n) => (
@@ -67,9 +71,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   `rounded-xl px-3 py-1.5 font-bold ${isActive ? "bg-panel2 text-ink" : "text-dim hover:text-ink"}`
                 }
               >
-                <span aria-hidden className="mr-1">
-                  {n.icon}
-                </span>
+                <Icon icon={n.icon} className="mr-1.5" />
                 {n.label}
               </NavLink>
             ))}
@@ -80,7 +82,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <SampleBanner />
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+        <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
+      </main>
     </div>
   );
 }

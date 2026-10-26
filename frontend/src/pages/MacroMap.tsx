@@ -4,13 +4,15 @@ import RouteMode from "../components/map/RouteMode";
 import WavesMode from "../components/map/WavesMode";
 import HeatmapMode from "../components/map/HeatmapMode";
 import ScenarioMode from "../components/map/ScenarioMode";
+import { Flame, Lightbulb, Map as MapIcon, Route as RouteIcon, Waves } from "lucide-react";
+import { Icon } from "../components/ui";
 
 const MODES = [
-  { id: "explore", label: "🗺 Explore", blurb: "Every camp, objective and shortcut on the current map." },
-  { id: "route", label: "🧭 Routes", blurb: "Optimal movement or zipline: which gets you there faster?" },
-  { id: "waves", label: "🌊 Waves", blurb: "Real trooper waves from a replay. See where they meet." },
-  { id: "heatmap", label: "🔥 Your heatmap", blurb: "Where you spend your time in each phase." },
-  { id: "decide", label: "🤔 What would you do?", blurb: "Real moments from your games. Pick, then see what happened." },
+  { id: "explore", label: "Explore", icon: MapIcon, blurb: "Every camp, objective and shortcut on the current map." },
+  { id: "route", label: "Routes", icon: RouteIcon, blurb: "Optimal movement or zipline: which gets you there faster?" },
+  { id: "waves", label: "Waves", icon: Waves, blurb: "Real trooper waves from a replay. See where they meet." },
+  { id: "heatmap", label: "Your heatmap", icon: Flame, blurb: "Where you spend your time in each phase." },
+  { id: "decide", label: "What would you do?", icon: Lightbulb, blurb: "Real moments from your games. Pick, then see what happened." },
 ] as const;
 
 type Mode = (typeof MODES)[number]["id"];
@@ -22,7 +24,9 @@ export default function MacroMap() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold">🗺 Macro Map</h1>
+        <h1 className="text-3xl font-bold">
+          <Icon icon={MapIcon} className="text-accent" /> Macro Map
+        </h1>
         <span className="text-dim">{current.blurb}</span>
       </div>
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Map mode">
@@ -33,9 +37,9 @@ export default function MacroMap() {
             aria-selected={mode === m.id}
             type="button"
             onClick={() => setParams({ mode: m.id })}
-            className={`rounded-xl border-2 px-4 py-2 font-bold ${mode === m.id ? "border-s1 bg-panel2" : "border-line text-dim hover:text-ink"}`}
+            className={`rounded-xl border-2 px-4 py-2 font-bold ${mode === m.id ? "border-accent bg-panel2" : "border-line text-dim hover:text-ink"}`}
           >
-            {m.label}
+            <Icon icon={m.icon} /> {m.label}
           </button>
         ))}
       </div>

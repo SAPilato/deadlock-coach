@@ -29,6 +29,21 @@ Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offlin
 - **Replays (optional)**: auto-download or upload a `.dem` to add the urn check.
 - **Trends**: each habit over your last 20 games: improving, same or worse.
 
+Game phases come from objectives, not a clock:
+- **Laning** ends when the Guardian in your lane falls.
+- **Late game** starts when the first Base Guardian falls (either team).
+- In 40 recent matches the first Walker fell ~40% of the way in, too early to call
+  "late". The first Base Guardian fell ~65% of the way in (median 24:47).
+
+## Look
+
+Settings → Look has four themes. Each one changes the whole app right away:
+**Slate** (calm dark), **Brass Deco** (Deadlock's 1920s brass and black),
+**Case File** (light paper and ink) and **Neon HUD** (esports, cyan).
+Add `?theme=deco` (or `slate`, `casefile`, `hud`) to any page to try one.
+Body text is Atkinson Hyperlegible in every theme. The UI uses line icons
+(lucide-react), never emojis; a test fails if an emoji is added.
+
 ## Build Lab (Phase 2)
 
 - Pick a hero and level. Add up to 12 items (the most players held at once in

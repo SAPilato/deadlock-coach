@@ -9,9 +9,9 @@ import {
   YAxis,
 } from "recharts";
 import { clock, compact, num } from "../lib/format";
+import { useThemeColors } from "../lib/theme";
 
 const YOU = "#3987e5";
-const AVG = "#c3c2b7";
 
 interface Point {
   t: number;
@@ -28,6 +28,7 @@ export default function SoulsChart({
   time: number | null;
   onPick: (t: number) => void;
 }) {
+  const c = useThemeColors();
   const hasAvg = series.some((p) => p.avg != null);
   let lastAvg = -1;
   series.forEach((p, i) => {
@@ -41,7 +42,7 @@ export default function SoulsChart({
         </span>
         {hasAvg && (
           <span className="inline-flex items-center gap-2">
-            <span className="inline-block w-6 border-t-2 border-dashed" style={{ borderColor: AVG }} /> Rank average
+            <span className="inline-block w-6 border-t-2 border-dashed" style={{ borderColor: c.dim }} /> Rank average
           </span>
         )}
       </div>
@@ -54,26 +55,26 @@ export default function SoulsChart({
               if (e && e.activeLabel != null) onPick(Number(e.activeLabel));
             }}
           >
-            <CartesianGrid stroke="#2c2c2a" vertical={false} />
+            <CartesianGrid stroke={c.line} vertical={false} />
             <XAxis
               dataKey="t"
               type="number"
               domain={[0, "dataMax"]}
               tickFormatter={(t) => clock(t)}
-              stroke="#898781"
-              tick={{ fill: "#9a9890", fontSize: 14 }}
+              stroke={c.muted}
+              tick={{ fill: c.muted, fontSize: 14 }}
             />
-            <YAxis tickFormatter={compact} stroke="#898781" tick={{ fill: "#9a9890", fontSize: 14 }} width={48} />
+            <YAxis tickFormatter={compact} stroke={c.muted} tick={{ fill: c.muted, fontSize: 14 }} width={48} />
             <Tooltip
-              contentStyle={{ background: "#0e1014", border: "1px solid #2e3440", borderRadius: 12 }}
+              contentStyle={{ background: c.bg, border: `1px solid ${c.line}`, borderRadius: 12, color: c.ink }}
               labelFormatter={(t) => `At ${clock(Number(t))}`}
               formatter={(v: number, name: string) => [num(v), name === "you" ? "You" : "Rank average"]}
             />
-            {time != null && <ReferenceLine x={time} stroke="#f4f5f7" strokeWidth={2} />}
+            {time != null && <ReferenceLine x={time} stroke={c.ink} strokeWidth={2} />}
             {hasAvg && (
               <Line
                 dataKey="avg"
-                stroke={AVG}
+                stroke={c.dim}
                 strokeWidth={2}
                 strokeDasharray="6 5"
                 dot={false}
@@ -81,7 +82,7 @@ export default function SoulsChart({
                 isAnimationActive={false}
                 label={(p: { index: number; x: number; y: number }) =>
                   p.index === lastAvg ? (
-                    <text key="avg-label" x={p.x + 8} y={p.y + 5} fill="#c3c2b7" fontSize={14}>
+                    <text key="avg-label" x={p.x + 8} y={p.y + 5} fill={c.dim} fontSize={14}>
                       Rank avg
                     </text>
                   ) : (
@@ -94,12 +95,12 @@ export default function SoulsChart({
               dataKey="you"
               stroke={YOU}
               strokeWidth={2.5}
-              dot={{ r: 4, fill: YOU, stroke: "#171a21", strokeWidth: 2 }}
+              dot={{ r: 4, fill: YOU, stroke: c.panel, strokeWidth: 2 }}
               activeDot={{ r: 6 }}
               isAnimationActive={false}
               label={(p: { index: number; x: number; y: number }) =>
                 p.index === series.length - 1 ? (
-                  <text key="you-label" x={p.x + 8} y={p.y + 5} fill="#f4f5f7" fontSize={14} fontWeight={700}>
+                  <text key="you-label" x={p.x + 8} y={p.y + 5} fill={c.ink} fontSize={14} fontWeight={700}>
                     You
                   </text>
                 ) : (

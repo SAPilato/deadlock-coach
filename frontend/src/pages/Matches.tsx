@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { ago, clock, num } from "../lib/format";
-import { ErrorBox, HeroIcon, Loading, RankBadge, WinLoss } from "../components/ui";
+import { ErrorBox, HeroIcon, Icon, Loading, RankBadge, WinLoss } from "../components/ui";
+import { List, RotateCw, Timer } from "lucide-react";
 
 export default function Matches() {
   const qc = useQueryClient();
@@ -16,10 +17,12 @@ export default function Matches() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold">▤ Matches</h1>
+        <h1 className="text-3xl font-bold">
+          <Icon icon={List} className="text-accent" /> Matches
+        </h1>
         {q.data && <span className="chip">{q.data.matches.length} games</span>}
         <button type="button" className="btn ml-auto" onClick={refresh}>
-          ↻ Refresh
+          <Icon icon={RotateCw} /> Refresh
         </button>
       </div>
       {q.isLoading && <Loading />}
@@ -47,7 +50,7 @@ export default function Matches() {
                 <div className="font-bold tnum">{num(m.souls_per_min)}</div>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-3">
-                <span className="tnum text-dim">⏱ {clock(m.duration_s)}</span>
+                <span className="tnum text-dim"><Icon icon={Timer} /> {clock(m.duration_s)}</span>
                 <RankBadge rank={m.rank} size={28} />
               </div>
             </div>
@@ -60,7 +63,7 @@ export default function Matches() {
                   <div className="text-sm text-muted mt-1">Street Brawl: not reviewed.</div>
                 </div>
               ) : (
-                <Link to={`/matches/${m.match_id}`} className="card block hover:border-s1">
+                <Link to={`/matches/${m.match_id}`} className="card block hover:border-accent">
                   {row}
                 </Link>
               )}

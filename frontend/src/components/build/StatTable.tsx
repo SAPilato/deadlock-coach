@@ -78,7 +78,7 @@ export default function StatTable({
           );
         })}
       </table>
-      <button type="button" className="text-s1 font-bold hover:underline" onClick={() => setAll(!all)}>
+      <button type="button" className="text-accent font-bold hover:underline" onClick={() => setAll(!all)}>
         {all ? "Key stats only ▴" : "All stats ▾"}
       </button>
     </div>

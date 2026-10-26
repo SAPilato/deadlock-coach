@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type ScenarioRow } from "../../lib/api";
 import { ago, clock, signed } from "../../lib/format";
-import { ErrorBox, HeroIcon, Loading, ReadAloud } from "../ui";
+import { ErrorBox, HeroIcon, Icon, Loading, ReadAloud } from "../ui";
 import MapCanvas, { ALLY, ENEMY, Glyph, Lanes, S, SURFACE } from "./MapCanvas";
+import { Play as PlayIcon, RotateCcw, Target } from "lucide-react";
 
 const ME = "#ffffff";
 
@@ -22,7 +23,7 @@ export default function ScenarioMode() {
       <ul className="grid gap-3 md:grid-cols-2">
         {list.data.map((r) => (
           <li key={`${r.match_id}-${r.t}`}>
-            <button type="button" onClick={() => setPick(r)} className="card flex w-full items-center gap-4 text-left hover:border-s1">
+            <button type="button" onClick={() => setPick(r)} className="card flex w-full items-center gap-4 text-left hover:border-accent">
               <HeroIcon hero={r.hero} size={48} />
               <div className="min-w-0">
                 <div className="text-lg font-bold">{r.label}</div>
@@ -31,7 +32,9 @@ export default function ScenarioMode() {
                 </div>
                 {r.habit && <span className="chip mt-1 text-sm">{r.habit}</span>}
               </div>
-              <span className="ml-auto font-bold text-s1">Play ▶</span>
+              <span className="ml-auto font-bold text-accent">
+            Play <Icon icon={PlayIcon} />
+          </span>
             </button>
           </li>
         ))}
@@ -65,7 +68,7 @@ function Play({ row, onBack }: { row: ScenarioRow; onBack: () => void }) {
 
   return (
     <div className="space-y-4">
-      <button type="button" className="text-s1 font-bold hover:underline" onClick={onBack}>
+      <button type="button" className="text-accent font-bold hover:underline" onClick={onBack}>
         ← All moments
       </button>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,680px)_1fr]">
@@ -145,11 +148,11 @@ function Play({ row, onBack }: { row: ScenarioRow; onBack: () => void }) {
                 )}
               </div>
               {s.finding && (
-                <div className="rounded-xl border-l-4 border-s1 bg-panel2 px-4 py-3">
+                <div className="rounded-xl border-l-4 border-accent bg-panel2 px-4 py-3">
                   <div className="label">{s.finding.habit}</div>
                   <div className="font-bold">{s.finding.headline}</div>
                   <div>
-                    <b className="text-s1">🎯 Next game: </b>
+                    <b className="text-accent"><Icon icon={Target} /> Next game: </b>
                     {s.finding.do_next}
                   </div>
                   <div className="mt-2">
@@ -159,7 +162,7 @@ function Play({ row, onBack }: { row: ScenarioRow; onBack: () => void }) {
               )}
               <div className="flex gap-2">
                 <button type="button" className="btn" onClick={() => setFrame(0)}>
-                  ↺ Replay
+                  <Icon icon={RotateCcw} /> Replay
                 </button>
                 <button type="button" className="btn" onClick={() => { setChoice(null); setFrame(0); }}>
                   Try again

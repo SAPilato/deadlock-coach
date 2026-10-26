@@ -2,6 +2,9 @@ import math
 import statistics
 
 from app.analysis.loader import geometry
+from app.analysis.model import ObjectiveEvent
+from app.report import phase_bounds, phase_of
+from tests import factories as f
 
 
 def test_seed_is_available(seed_info):
@@ -72,3 +75,24 @@ def test_upgrades_only_in_item_list(seed_contexts):
     for ctx in seed_contexts:
         assert ctx.player.items
         assert all(i.tier for i in ctx.player.items)
+
+
+def _fell(kind: str, t: int, lane_id=None) -> ObjectiveEvent:
+    return ObjectiveEvent(t=t, owner_team=1, objective_id=0, kind=kind, lane_num=None, lane_id=lane_id,
+                          name=kind, x=None, y=None)
+
+
+def test_late_game_starts_at_first_base_guardian_not_walker(seed_gd):
+    me = f.player(0, 0, duration=2400)
+    objectives = [_fell("tier1", 500, me.lane), _fell("tier2", 900), _fell("barracks", 1600), _fell("barracks", 1500)]
+    bounds = phase_bounds(f.context(seed_gd, [me], duration=2400, objectives=objectives))
+    assert bounds == (500, 1500, False)
+    assert [phase_of(t, bounds) for t in (400, 1000, 1499, 1500)] == ["early", "mid", "mid", "late"]
+
+
+def test_no_base_guardian_down_means_no_late_game(seed_gd):
+    me = f.player(0, 0, duration=1700)
+    objectives = [_fell("tier1", 500, me.lane), _fell("tier2", 900)]
+    bounds = phase_bounds(f.context(seed_gd, [me], duration=1700, objectives=objectives))
+    assert bounds[1] == 1700
+    assert phase_of(1699, bounds) == "mid"

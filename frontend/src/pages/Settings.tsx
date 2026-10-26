@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type SteamHit } from "../lib/api";
-import { ErrorBox, Loading, Section } from "../components/ui";
+import { ErrorBox, Icon, Loading, Section } from "../components/ui";
+import { Check, Eye, Palette, RotateCw, Search, Settings as SettingsIcon, TriangleAlert } from "lucide-react";
+import ThemePicker from "../components/ThemePicker";
 
 const SUBRANKS = [1, 2, 3, 4, 5, 6];
 
@@ -35,11 +37,18 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">⚙ Settings</h1>
+      <h1 className="text-3xl font-bold">
+        <Icon icon={SettingsIcon} className="text-accent" /> Settings
+      </h1>
 
-      <Section title="1. Your Steam account">
+      <Section id="look" icon={Palette} title="1. Look">
+        <p className="text-dim">Pick a style for the whole app. It changes right away.</p>
+        <ThemePicker />
+      </Section>
+
+      <Section title="2. Your Steam account">
         {s.using_sample ? (
-          <p className="text-dim">👀 Now showing a sample player. Add your own ID below.</p>
+          <p className="text-dim"><Icon icon={Eye} /> Now showing a sample player. Add your own ID below.</p>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             {s.profile?.avatar && <img src={s.profile.avatar} alt="" className="h-12 w-12 rounded-xl" />}
@@ -88,7 +97,7 @@ export default function Settings() {
             />
           </label>
           <button type="submit" className="btn self-end">
-            🔍 Search
+            <Icon icon={Search} /> Search
           </button>
         </form>
         {find.error && <ErrorBox error={find.error} />}
@@ -116,7 +125,7 @@ export default function Settings() {
         {save.error && <ErrorBox error={save.error} />}
       </Section>
 
-      <Section title="2. Compare me with">
+      <Section title="3. Compare me with">
         <p className="text-dim">Benchmarks use players in this rank range.</p>
         <div className="flex flex-wrap items-end gap-4">
           <RankPicker label="From" value={lo} onChange={setLo} ranks={s.ranks} />
@@ -127,7 +136,7 @@ export default function Settings() {
         </div>
       </Section>
 
-      <Section title="3. Game data">
+      <Section title="4. Game data">
         {meta.data && (
           <ul className="space-y-1 text-lg">
             <li>
@@ -135,12 +144,16 @@ export default function Settings() {
             </li>
             <li>
               Cached build: <b>{meta.data.patch.cached_build ?? "none"}</b>{" "}
-              {meta.data.patch.stale ? <span className="text-low font-bold">⚠ out of date</span> : <span className="text-good">✓ current</span>}
+              {meta.data.patch.stale ? <span className="text-low font-bold">
+                <Icon icon={TriangleAlert} /> out of date
+              </span> : <span className="text-good">
+                <Icon icon={Check} /> current
+              </span>}
             </li>
             {meta.data.patch.latest_patch && (
               <li>
                 Latest patch:{" "}
-                <a className="text-s1 hover:underline" href={meta.data.patch.latest_patch.link} target="_blank" rel="noreferrer">
+                <a className="text-accent hover:underline" href={meta.data.patch.latest_patch.link} target="_blank" rel="noreferrer">
                   {meta.data.patch.latest_patch.title}
                 </a>
               </li>
@@ -148,7 +161,7 @@ export default function Settings() {
           </ul>
         )}
         <button type="button" className="btn" onClick={() => refresh.mutate()} disabled={refresh.isPending}>
-          ↻ {refresh.isPending ? "Refreshing…" : "Refresh game data"}
+          <Icon icon={RotateCw} /> {refresh.isPending ? "Refreshing…" : "Refresh game data"}
         </button>
         {refresh.error && <ErrorBox error={refresh.error} />}
       </Section>

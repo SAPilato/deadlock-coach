@@ -47,7 +47,7 @@ export default function ItemTiming({ items, onPick }: { items: Report["items"]; 
                     }}
                   />
                 </span>
-                <span className={`tnum font-bold ${d > 60 ? "text-neg" : d < -60 ? "text-s1" : "text-dim"}`}>
+                <span className={`tnum font-bold ${d > 60 ? "text-neg" : d < -60 ? "text-accent" : "text-dim"}`}>
                   {signed(d, clock)}
                 </span>
               </button>

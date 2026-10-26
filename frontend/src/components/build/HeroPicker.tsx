@@ -43,7 +43,7 @@ export default function HeroPicker({
                   setQ("");
                 }}
                 className={`flex flex-col items-center gap-1 rounded-lg p-2 border ${
-                  h.id === value ? "border-s1 bg-bg" : "border-transparent hover:border-line"
+                  h.id === value ? "border-accent bg-bg" : "border-transparent hover:border-line"
                 }`}
               >
                 <HeroIcon hero={h} size={48} />

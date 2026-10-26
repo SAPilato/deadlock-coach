@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, type Severity } from "../lib/api";
-import { ErrorBox, EstTag, Loading, More } from "../components/ui";
+import { ErrorBox, EstTag, Icon, Loading, More } from "../components/ui";
 import { STATUS } from "./Home";
 import LessonLink from "../components/LessonLink";
+import { Hourglass, Target, TrendingUp } from "lucide-react";
 
-const DOT: Record<Severity, { color: string; icon: string }> = {
-  high: { color: "#d03b3b", icon: "▲" },
-  med: { color: "#ec835a", icon: "■" },
-  low: { color: "#fab219", icon: "●" },
+// Status colours come from the theme (text-high etc.); shape repeats the meaning.
+const DOT: Record<Severity, { cls: string; icon: string }> = {
+  high: { cls: "text-high", icon: "▲" },
+  med: { cls: "text-med", icon: "■" },
+  low: { cls: "text-low", icon: "●" },
 };
 
 export default function Trends() {
@@ -23,7 +25,9 @@ export default function Trends() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold">↗ Habit trends</h1>
+        <h1 className="text-3xl font-bold">
+          <Icon icon={TrendingUp} className="text-accent" /> Habit trends
+        </h1>
         <span className="chip">{t.matches.length} games</span>
         <span className="text-dim">
           Last {t.recent_n} vs the {t.previous_n} before
@@ -31,14 +35,14 @@ export default function Trends() {
         </span>
       </div>
       {t.matches.length < 8 && (
-        <p className="card text-dim">⏳ Trends need 8+ reviewed games. Play more, or check your Steam ID.</p>
+        <p className="card text-dim"><Icon icon={Hourglass} /> Trends need 8+ reviewed games. Play more, or check your Steam ID.</p>
       )}
 
       <div className="flex flex-wrap gap-4 text-sm text-dim">
         <span>Dots: oldest → newest game</span>
         {(Object.keys(DOT) as Severity[]).map((s) => (
           <span key={s}>
-            <span style={{ color: DOT[s].color }}>{DOT[s].icon}</span> {s === "med" ? "Medium" : s === "high" ? "High" : "Low"}
+            <span className={DOT[s].cls}>{DOT[s].icon}</span> {s === "med" ? "Medium" : s === "high" ? "High" : "Low"}
           </span>
         ))}
         <span>○ Fine</span>
@@ -71,8 +75,7 @@ export default function Trends() {
                       key={m.match_id}
                       to={`/matches/${m.match_id}`}
                       title={sev ? `${sev} in this game` : p?.ran ? "Fine in this game" : "Not checked"}
-                      className="grid h-8 w-8 place-items-center rounded-lg bg-panel2 border border-line hover:border-s1"
-                      style={{ color: sev ? DOT[sev].color : "#9a9890" }}
+                      className={`grid h-8 w-8 place-items-center rounded-lg bg-panel2 border border-line hover:border-accent ${sev ? DOT[sev].cls : "text-muted"}`}
                     >
                       {sev ? DOT[sev].icon : p?.ran ? "○" : "·"}
                     </Link>
@@ -80,8 +83,8 @@ export default function Trends() {
                 })}
               </div>
               <More label="How to fix">
-                <p className="rounded-xl bg-panel2 border-l-4 border-s1 px-4 py-2">
-                  <b className="text-s1">🎯 Next game: </b>
+                <p className="rounded-xl bg-panel2 border-l-4 border-accent px-4 py-2">
+                  <b className="text-accent"><Icon icon={Target} /> Next game: </b>
                   {h.do_next}
                 </p>
                 <LessonLink id={h.lesson_id} />

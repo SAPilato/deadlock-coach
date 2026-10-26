@@ -64,7 +64,7 @@ export default function HeatmapMode() {
               aria-selected={phase === p.id}
               type="button"
               onClick={() => setPhase(p.id)}
-              className={`rounded-xl border-2 px-4 py-2 font-bold ${phase === p.id ? "border-s1 bg-panel2" : "border-line text-dim"}`}
+              className={`rounded-xl border-2 px-4 py-2 font-bold ${phase === p.id ? "border-accent bg-panel2" : "border-line text-dim"}`}
             >
               {p.label}
             </button>
@@ -89,7 +89,7 @@ export default function HeatmapMode() {
           </li>
         </ul>
         <p className="text-dim">Are you near the objectives that fell? If not, rotate sooner.</p>
-        <p className="text-sm text-muted">Phases end when your lane's Guardian falls, then the first Walker.</p>
+        <p className="text-sm text-muted">Mid game starts when your lane's Guardian falls. Late game starts at the first Base Guardian.</p>
       </div>
     </div>
   );

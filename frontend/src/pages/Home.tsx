@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, type TrendStatus } from "../lib/api";
 import { ago, num } from "../lib/format";
-import { ErrorBox, HeroIcon, Loading, ReadAloud, WinLoss } from "../components/ui";
+import { ErrorBox, HeroIcon, Icon, Loading, ReadAloud, WinLoss } from "../components/ui";
 import LessonLink from "../components/LessonLink";
+import { BookOpen, Check, List, Search, Settings as SettingsIcon, Target, TrendingUp } from "lucide-react";
 
 export const STATUS: Record<TrendStatus, { icon: string; label: string; cls: string }> = {
   improving: { icon: "▲", label: "Improving", cls: "text-good border-good" },
@@ -57,7 +58,7 @@ export default function Home() {
                 </div>
               </div>
               <Link to={`/matches/${last.match_id}`} className="btn-primary">
-                🔎 Review this match
+                <Icon icon={Search} /> Review this match
               </Link>
             </>
           )}
@@ -66,16 +67,16 @@ export default function Home() {
         <div className="card space-y-3">
           <h2 className="label">Go to</h2>
           <Link to="/matches" className="btn w-full justify-start">
-            ▤ All matches
+            <Icon icon={List} /> All matches
           </Link>
           <Link to="/trends" className="btn w-full justify-start">
-            ↗ Habit trends
+            <Icon icon={TrendingUp} /> Habit trends
           </Link>
           <Link to="/learn" className="btn w-full justify-start">
-            📚 Lessons
+            <Icon icon={BookOpen} /> Lessons
           </Link>
           <Link to="/settings" className="btn w-full justify-start">
-            ⚙ Settings
+            <Icon icon={SettingsIcon} /> Settings
           </Link>
         </div>
       </div>
@@ -88,16 +89,16 @@ function FocusCard({ focus }: { focus: NonNullable<Awaited<ReturnType<typeof api
     return (
       <div className="card border-good">
         <div className="label">Next game focus</div>
-        <p className="text-3xl font-bold text-good mt-2">✓ No repeat problems found.</p>
+        <p className="text-3xl font-bold text-good mt-2"><Icon icon={Check} /> No repeat problems found.</p>
         <p className="text-dim mt-1">Keep playing. We check again after each game.</p>
       </div>
     );
   }
   const s = STATUS[focus.status];
   return (
-    <div className="card border-2 border-s1 space-y-4">
+    <div className="card border-2 border-accent space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="label text-s1">🎯 Next game focus</span>
+        <span className="label text-accent"><Icon icon={Target} /> Next game focus</span>
         <span className={`chip font-bold ${s.cls}`}>
           {s.icon} {s.label}
         </span>

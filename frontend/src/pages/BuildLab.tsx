@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Build, type SavedBuild, type Target } from "../lib/api";
-import { ErrorBox, HeroIcon, Loading, Section } from "../components/ui";
+import { ErrorBox, HeroIcon, Icon, Loading, Section } from "../components/ui";
 import HeroPicker from "../components/build/HeroPicker";
 import Slots from "../components/build/Slots";
 import Shop from "../components/build/Shop";
@@ -12,6 +12,7 @@ import Dummy from "../components/build/Dummy";
 import SavedBuilds from "../components/build/SavedBuilds";
 import Abilities from "../components/build/Abilities";
 import { souls } from "../components/build/common";
+import { ArrowLeftRight, ChartColumn, FlaskConical, Save, TriangleAlert } from "lucide-react";
 
 const DEFAULT_TARGET: Target = { hp: 2500, bullet_resist: 0, headshot_pct: 0, spirit_resist: 0 };
 const STORE_KEY = "coach.buildlab.v1";
@@ -162,13 +163,15 @@ export default function BuildLab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold">🧪 Build Lab</h1>
+        <h1 className="text-3xl font-bold">
+          <Icon icon={FlaskConical} className="text-accent" /> Build Lab
+        </h1>
         <span className="text-dim">Try items. See exactly what changes.</span>
       </div>
       {notice && (
-        <p className="card border-s1" role="status">
+        <p className="card border-accent" role="status">
           {notice}{" "}
-          <button type="button" className="text-s1 font-bold" onClick={() => setNotice(null)}>
+          <button type="button" className="text-accent font-bold" onClick={() => setNotice(null)}>
             OK
           </button>
         </p>
@@ -192,7 +195,7 @@ export default function BuildLab() {
               max={levels.length || 36}
               value={work.level}
               onChange={(e) => update({ level: Number(e.target.value) })}
-              className="mt-2 w-full accent-[#3987e5]"
+              className="mt-2 w-full accent-accent"
               aria-label="Hero level"
             />
           </label>
@@ -213,7 +216,7 @@ export default function BuildLab() {
             />
             {sheet.data?.warnings.map((w) => (
               <p key={w} className="text-low">
-                ⚠ {w}
+                <Icon icon={TriangleAlert} /> {w}
               </p>
             ))}
           </Section>
@@ -237,8 +240,9 @@ export default function BuildLab() {
 
         <div className="lg:sticky lg:top-24 self-start space-y-3">
           <Section
-            title="📊 Stats"
-            aside={previewItem && <span className="chip border-s1 text-s1">Preview: + {previewItem.name}</span>}
+            icon={ChartColumn}
+            title="Stats"
+            aside={previewItem && <span className="chip border-accent text-accent">Preview: + {previewItem.name}</span>}
           >
             {sheet.error && <ErrorBox error={sheet.error} />}
             {previewItem && previewSheet.data ? (
@@ -298,7 +302,7 @@ export default function BuildLab() {
             />
           </label>
           <button type="submit" className="btn-primary" disabled={!work.name.trim() || save.isPending}>
-            💾 {work.id ? "Save changes" : "Save"}
+            <Icon icon={Save} /> {work.id ? "Save changes" : "Save"}
           </button>
           {work.id && (
             <button type="button" className="btn" onClick={() => save.mutate(true)} disabled={save.isPending}>
@@ -325,7 +329,7 @@ export default function BuildLab() {
       </Section>
 
       {compareBuild && (
-        <Section title={`⇄ This build vs "${compareBuild.name}"`} aside={<button type="button" className="chip" onClick={() => setCompareId(null)}>Close</button>}>
+        <Section icon={ArrowLeftRight} title={`This build vs "${compareBuild.name}"`} aside={<button type="button" className="chip" onClick={() => setCompareId(null)}>Close</button>}>
           <div className="grid gap-4 md:grid-cols-2">
             <ItemStrip title="This build" ids={work.items} itemsById={itemsById} heroImage={heroMap.get(work.hero_id)} />
             <ItemStrip title={compareBuild.name} ids={compareBuild.items} itemsById={itemsById} heroImage={heroMap.get(compareBuild.hero_id)} />

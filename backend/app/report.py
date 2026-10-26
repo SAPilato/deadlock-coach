@@ -52,11 +52,18 @@ def map_layer(ctx: MatchContext) -> dict:
 
 
 def phase_bounds(ctx: MatchContext) -> tuple[int, int, bool]:
-    """(end of laning, first Walker down, is_estimate). Phases come from objectives, not a clock."""
+    """(end of laning, start of late game, is_estimate). Phases come from objectives, not a clock.
+
+    Laning ends when the Guardian in your lane falls. Late game starts when the first Base
+    Guardian falls (either team): a base is open and fights move to Shrines and the Patron.
+    Not the first Walker: in 40 real matches it fell ~40% of the way in, which made 60% of
+    every match "late". The first Base Guardian fell ~65% of the way in. A match where no
+    Base Guardian fell has no late game.
+    """
     laning, est = ctx.laning_end()
-    walkers = [o.t for o in ctx.objectives if o.kind == "tier2"]
-    mid_end = min(walkers) if walkers else max(laning + 900, 1500)
-    return laning, max(mid_end, laning), est or not walkers
+    base = [o.t for o in ctx.objectives if o.kind == "barracks"]
+    late = min(base) if base else max(ctx.duration_s, laning)
+    return laning, max(late, laning), est
 
 
 def phase_of(t: int, bounds: tuple[int, int, bool]) -> str:
