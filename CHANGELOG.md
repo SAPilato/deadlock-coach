@@ -5,6 +5,12 @@ All notable changes. Newest first.
 ## [Unreleased]
 
 ### Added
+- HTTP API (`/api`): meta + patch status, settings (Steam ID in any format, rank
+  bracket), Steam name search, match list, full match report, minimap paths for
+  the timeline scrubber, trends across recent matches with one focus habit.
+- Match phases (early/mid/late) come from objectives: Guardian in your lane falls,
+  then the first Walker falls.
+- Per-match analysis cached in SQLite, invalidated by engine version or bracket change.
 - Findings engine (`backend/app/findings`) with 8 rules: low souls/min, dying alone,
   same death spot, idle time, late core item, missed objective fights, urn contest
   (replay only), lane overstay. Each finding has a headline, one "next game" fix,

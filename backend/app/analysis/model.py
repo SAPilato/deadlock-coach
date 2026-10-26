@@ -120,6 +120,7 @@ class MatchContext:
     item_map: dict[int, dict]
     bench: Benchmarks | None = None
     replay: Any = None  # app.replay.parser.ReplayData when a .dem was parsed
+    mid_boss: list[tuple[int, int]] = field(default_factory=list)  # (time, team that killed it)
 
     @property
     def won(self) -> bool:
@@ -210,6 +211,11 @@ def build_context(
         item_map=item_map,
         bench=bench,
         replay=replay,
+        mid_boss=[
+            (m["destroyed_time_s"], m.get("team_killed", 0))
+            for m in info.get("mid_boss") or []
+            if m.get("destroyed_time_s")
+        ],
     )
 
 
