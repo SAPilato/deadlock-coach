@@ -1,0 +1,18 @@
+{
+  "name": "deadlock-coach",
+  "private": true,
+  "description": "Personal coach app for Deadlock: match review, findings, build lab, macro map.",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently -k -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node scripts/py.mjs -m uvicorn app.main:app --reload --port 8000 --app-dir backend --reload-dir backend/app",
+    "dev:web": "npm --prefix frontend run dev",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "node scripts/py.mjs -m pytest backend/tests -q",
+    "test:web": "npm --prefix frontend run test",
+    "seed": "node scripts/py.mjs -m app.seed.build --app-dir backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
