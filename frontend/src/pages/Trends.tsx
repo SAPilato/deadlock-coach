@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type Severity } from "../lib/api";
 import { ErrorBox, EstTag, Loading, More } from "../components/ui";
 import { STATUS } from "./Home";
+import LessonLink from "../components/LessonLink";
 
 const DOT: Record<Severity, { color: string; icon: string }> = {
   high: { color: "#d03b3b", icon: "▲" },
@@ -83,6 +84,7 @@ export default function Trends() {
                   <b className="text-s1">🎯 Next game: </b>
                   {h.do_next}
                 </p>
+                <LessonLink id={h.lesson_id} />
               </More>
             </li>
           );

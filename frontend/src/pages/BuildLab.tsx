@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Build, type SavedBuild, type Target } from "../lib/api";
 import { ErrorBox, HeroIcon, Loading, Section } from "../components/ui";
@@ -88,6 +88,12 @@ export default function BuildLab() {
     queryFn: () => api.blShop(work!.hero_id),
     enabled: !!work,
   });
+  // Deep links like /build#shop (from a lesson) scroll once that section exists.
+  const { hash } = useLocation();
+  const shopReady = !!shop.data;
+  useEffect(() => {
+    if (hash && shopReady) document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
+  }, [hash, shopReady]);
   const sheet = useQuery({
     queryKey: ["bl-sheet", build],
     queryFn: () => api.blCompute(build!),
@@ -211,7 +217,7 @@ export default function BuildLab() {
               </p>
             ))}
           </Section>
-          <Section title="3. Shop">
+          <Section id="shop" title="3. Shop">
             {shop.isLoading && <Loading label="Loading the shop…" />}
             {shop.error && <ErrorBox error={shop.error} />}
             {shop.data && (

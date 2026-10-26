@@ -7,6 +7,8 @@ import Trends from "./pages/Trends";
 import Settings from "./pages/Settings";
 import BuildLab from "./pages/BuildLab";
 import MacroMap from "./pages/MacroMap";
+import Learn from "./pages/Learn";
+import LessonPage from "./pages/Lesson";
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/build" element={<BuildLab />} />
         <Route path="/map" element={<MacroMap />} />
+        <Route path="/learn" element={<Learn />} />
+        <Route path="/learn/:id" element={<LessonPage />} />
       </Routes>
     </Layout>
   );

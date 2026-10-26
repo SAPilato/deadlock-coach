@@ -445,6 +445,22 @@ export interface Scenario {
   finding: { habit: string; headline: string; do_next: string } | null;
 }
 
+export type LessonTopic = "Lane" | "Map" | "Fights" | "Items";
+
+export interface Lesson {
+  id: string;
+  topic: LessonTopic;
+  title: string;
+  icon: string;
+  summary: string;
+  points: string[];
+  facts: { text: string; source: "game data" | "measured" | "replay" }[];
+  try: { label: string; href: string };
+  /** Findings rule that suggests this lesson, if any. */
+  rule_id: string | null;
+  habit: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -512,6 +528,7 @@ export const api = {
   macroHeatmap: (n = 10) => request<HeatmapData>(`/macro/heatmap?n=${n}`),
   macroScenarios: () => request<ScenarioRow[]>("/macro/scenarios"),
   macroScenario: (matchId: number, t: number) => request<Scenario>(`/macro/scenario?match_id=${matchId}&t=${t}`),
+  learn: () => request<Lesson[]>("/learn"),
   matchBuild: (matchId: number, t?: number) =>
     request<{ hero_id: number; level: number; items: number[]; at: number; name: string }>(
       `/matches/${matchId}/build${t != null ? `?t=${t}` : ""}`,

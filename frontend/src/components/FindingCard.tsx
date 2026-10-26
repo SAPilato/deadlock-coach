@@ -1,6 +1,7 @@
 import type { Finding } from "../lib/api";
 import { clock, evidenceValue } from "../lib/format";
 import { EstTag, More, ReadAloud, SevBadge, sevStripe } from "./ui";
+import LessonLink from "./LessonLink";
 
 export default function FindingCard({ finding, onMoment }: { finding: Finding; onMoment?: (t: number) => void }) {
   const lead = finding.evidence[0];
@@ -32,6 +33,7 @@ export default function FindingCard({ finding, onMoment }: { finding: Finding; o
             <span className="font-bold text-s1">🎯 Next game: </span>
             {finding.do_next}
           </p>
+          <LessonLink id={finding.lesson_id} />
         </div>
       </div>
 

@@ -4,6 +4,23 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (Phase 4: Learn)
+- Learn page (`/learn`) with 11 short lessons in Lane, Map, Fights and Items.
+  "For you" suggests the lessons for your flagged habits, focus habit first.
+- Lesson page (`/learn/:id`): up to 3 steps, up to 3 game numbers with their
+  source, your record for the matching habit, read-aloud, and a "Try it" button
+  that opens the matching map layer or Build Lab view.
+- Lesson numbers come from game data at request time: wave timer and squad size,
+  trooper souls and orb split, Guardian HP and bounty, objective bounties,
+  Rejuvenator duration, camp/crate/buff counts, item tier prices, weapon spending
+  bonus. Zipline vs running is measured (`est.`); urn sites come from a replay.
+- Findings, the Home focus card and Trends link to their lesson. Learn is in the nav.
+- Deep links: `/map?mode=explore&layers=lanes,camps` opens those layers;
+  `/build#shop` scrolls to the shop.
+- Tests: lesson readability (title, sentence length, ≤3 steps and facts, no
+  hardcoded numbers), every rule has a lesson, facts fill offline, map links exist,
+  and the suggestion order.
+
 ### Fixed (map is now the post-City Never Sleeps map)
 - Urn: only the 2 live urn sites show. The asset data's 4 older spawn points are
   dropped (checked in post-update replays: urns only spawn and are delivered at 2 sites).

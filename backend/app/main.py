@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 
 from app.api.buildlab import router as buildlab_router
+from app.api.learn import router as learn_router
 from app.api.macro import router as macro_router
 from app.api.routes import router
 from app.config import REPO_ROOT
@@ -40,6 +41,7 @@ def create_app(state_factory: Callable[[], AppState] = create_state) -> FastAPI:
     app.include_router(router, prefix="/api")
     app.include_router(buildlab_router, prefix="/api")
     app.include_router(macro_router, prefix="/api")
+    app.include_router(learn_router, prefix="/api")
     app.add_middleware(GZipMiddleware, minimum_size=2000)
 
     if DIST.exists():

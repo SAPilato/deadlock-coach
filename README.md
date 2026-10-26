@@ -73,7 +73,20 @@ Build Lab ability damage: damage = base + scaling × spirit power, from each
 ability's game data, plus the upgrade tiers you pick. Values that scale with
 weapon or melee damage are listed but not computed.
 
-Learn comes in a later phase.
+## Learn (Phase 4)
+
+- **11 short lessons** in four topics: Lane (wave management, slow vs fast push,
+  freezing), Map (when to rotate, camp and crate rotations, always have a target,
+  urn), Fights (objectives, fighting with your team, death spots) and Items.
+- **For you:** the lessons that match your flagged habits, focus habit first, with
+  how many of your recent games had the problem.
+- **Each lesson:** up to 3 steps, up to 3 numbers from the game, and a button that
+  opens the map layer or Build Lab view that shows the idea. Read-aloud included.
+- Every finding, the Home focus card and Trends link to their lesson.
+
+Lesson numbers (wave timer, soul values, Guardian HP, item prices, camp counts…)
+are read from game data at request time, so they follow patches. Each one says
+where it came from: game data, measured from matches (`est.`), or a replay.
 
 ## Where the data comes from
 
@@ -86,6 +99,7 @@ All game data is fetched, never hardcoded, so a patch only needs a cache refresh
 | Heroes, items, ranks, map, lanes, NPC names | deadlock-api.com `/v1/assets/*` |
 | Objective, gold-source and combat enums | Valve protobufs via [SteamDatabase/Protobufs](https://github.com/SteamDatabase/Protobufs) |
 | Urn events from replays | [Boon](https://boon.readthedocs.io) |
+| Lesson numbers (wave timer, bounties, prices) | game settings (`/v1/assets/convars`), generic data, NPC units |
 
 Every cached row stores the game build (`patch_version`) it came from. The header
 shows the build and warns when a newer one is live.
@@ -111,9 +125,14 @@ backend/app/gamedata   the only code that calls external data sources
 backend/app/analysis   match data -> MatchContext (paths, map geometry, phases)
 backend/app/findings   rules engine; one file per rule in rules/
 backend/app/replay     replay download, Boon parsing, background jobs
+backend/app/learn      lesson cards (lessons.py) and their game-data facts (facts.py)
 frontend/src           React pages and components
 ```
 
 Add a rule: create `backend/app/findings/rules/<name>.py`, subclass `Rule`, put all
 text in `TEXT`, register it in `rules/__init__.py`, and add a test. The readability
 test fails if any sentence is over 15 words.
+
+Add a lesson: add an entry to `backend/app/learn/lessons.py` (no numbers in the
+text; put them in `facts.py` so they come from game data). `tests/test_learn.py`
+checks length, that every rule's `lesson_id` exists, and that map links are real.

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, type MapPoint } from "../../lib/api";
 import { ErrorBox, Loading } from "../ui";
@@ -78,10 +79,16 @@ export default function ExploreMode() {
   const [on, setOn] = useState<Set<string> | null>(null);
   const [tunnels, setTunnels] = useState<Set<string>>(new Set());
   const [hover, setHover] = useState<Hover | null>(null);
+  // ?layers=lanes,camps (from a lesson) picks the starting layers.
+  const [params] = useSearchParams();
+  const asked = params.get("layers");
 
   useEffect(() => {
-    if (q.data && on == null) setOn(new Set(q.data.layers.filter((l) => l.on).map((l) => l.id)));
-  }, [q.data, on]);
+    if (!q.data || on != null) return;
+    const ids = new Set(q.data.layers.map((l) => l.id));
+    const wanted = (asked ?? "").split(",").filter((id) => ids.has(id));
+    setOn(new Set(wanted.length ? wanted : q.data.layers.filter((l) => l.on).map((l) => l.id)));
+  }, [q.data, on, asked]);
 
 
   if (q.isLoading || !on) return <Loading label="Loading the map…" />;

@@ -9,10 +9,9 @@ const NAV = [
   { to: "/trends", label: "Trends", icon: "↗" },
   { to: "/build", label: "Build Lab", icon: "🧪" },
   { to: "/map", label: "Map", icon: "🗺" },
+  { to: "/learn", label: "Learn", icon: "📚" },
   { to: "/settings", label: "Settings", icon: "⚙" },
 ];
-
-const SOON = ["Learn"];
 
 function PatchBanner() {
   const { data } = useQuery({ queryKey: ["meta"], queryFn: api.meta, staleTime: 5 * 60_000 });
@@ -73,11 +72,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </span>
                 {n.label}
               </NavLink>
-            ))}
-            {SOON.map((s) => (
-              <span key={s} className="rounded-xl px-3 py-1.5 text-muted" title="Coming in a later phase">
-                {s} <span className="text-xs">soon</span>
-              </span>
             ))}
           </nav>
           <div className="ml-auto">

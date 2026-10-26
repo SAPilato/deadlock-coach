@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type TrendStatus } from "../lib/api";
 import { ago, num } from "../lib/format";
 import { ErrorBox, HeroIcon, Loading, ReadAloud, WinLoss } from "../components/ui";
+import LessonLink from "../components/LessonLink";
 
 export const STATUS: Record<TrendStatus, { icon: string; label: string; cls: string }> = {
   improving: { icon: "▲", label: "Improving", cls: "text-good border-good" },
@@ -70,6 +71,9 @@ export default function Home() {
           <Link to="/trends" className="btn w-full justify-start">
             ↗ Habit trends
           </Link>
+          <Link to="/learn" className="btn w-full justify-start">
+            📚 Lessons
+          </Link>
           <Link to="/settings" className="btn w-full justify-start">
             ⚙ Settings
           </Link>
@@ -109,6 +113,7 @@ function FocusCard({ focus }: { focus: NonNullable<Awaited<ReturnType<typeof api
         </b>{" "}
         recent games had this problem.
       </p>
+      <LessonLink id={focus.lesson_id} big />
     </div>
   );
 }
