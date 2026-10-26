@@ -1,5 +1,6 @@
 node_modules/
 frontend/dist/
+*.tsbuildinfo
 backend/.venv/
 backend/*.egg-info/
 __pycache__/

@@ -4,7 +4,13 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Changed
+- Minimaps draw the three lanes (York, Broadway, Greenwich) from map data so
+  positions are readable; bigger death markers; whole-number rank benchmarks;
+  kill and death markers use different shapes, with a legend.
+
 ### Added
+- README with setup, data sources, `est.` policy and known data limits.
 - Replays: auto-download from Valve (when the API has the replay link) or upload a
   `.dem`. Parsed with Boon in the background; urn pickups/drops/returns become
   "urn episodes" for the urn rule. Valve serves zstd files named `.bz2`, so the

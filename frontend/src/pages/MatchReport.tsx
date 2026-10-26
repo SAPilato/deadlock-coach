@@ -202,11 +202,12 @@ function DeathMap({ r, onPick }: { r: Report; onPick: (t: number) => void }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,480px)_1fr]">
       <Minimap
-        image={r.map.image}
+        map={r.map}
         markers={r.deaths.map((d, i) => ({
           key: `d${i}`,
           left: d.left,
           top: d.top,
+          size: 16,
           color: PHASE[d.phase].color,
           label: `${clock(d.t)} · ${d.killer ? `killed by ${d.killer}` : "died"} · ${d.place}`,
           onClick: () => onPick(d.t),

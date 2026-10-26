@@ -94,6 +94,11 @@ export interface TimelineEvent {
   tier?: number;
 }
 
+export interface MapLayer {
+  image?: string;
+  lanes: { id: number; name: string; color: string; pts: [number, number][] }[];
+}
+
 export interface Report {
   match: {
     id: number;
@@ -164,7 +169,7 @@ export interface Report {
     laning_end: number;
     laning_end_est: boolean;
   };
-  map: { image?: string };
+  map: MapLayer;
   players: (HeroCard & { slot: number; team: number; is_me: boolean })[];
   replay: { status: string; error?: string | null };
 }

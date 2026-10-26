@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { MapLayer } from "../lib/api";
 
 export interface Marker {
   key: string;
@@ -15,12 +16,12 @@ export interface Marker {
 const SURFACE = "#171a21";
 
 export default function Minimap({
-  image,
+  map,
   markers,
   maxWidth = 560,
   caption,
 }: {
-  image?: string;
+  map: MapLayer;
   markers: Marker[];
   maxWidth?: number;
   caption?: string;
@@ -31,7 +32,38 @@ export default function Minimap({
     <figure className="w-full" style={{ maxWidth }}>
       <div className="relative">
         <svg viewBox={`0 0 ${S} ${S}`} className="w-full rounded-xl bg-panel2 border border-line" role="img" aria-label={caption || "Minimap"}>
-          {image && <image href={image} x={0} y={0} width={S} height={S} opacity={0.75} />}
+          {map.image && (
+            <image href={map.image} x={0} y={0} width={S} height={S} style={{ filter: "brightness(2.2) contrast(1.1)" }} />
+          )}
+          {map.lanes.map((lane) => {
+            const mid = lane.pts[Math.floor(lane.pts.length / 2)];
+            return (
+              <g key={lane.id} aria-hidden>
+                <polyline
+                  points={lane.pts.map(([l, t]) => `${l * S},${t * S}`).join(" ")}
+                  fill="none"
+                  stroke={lane.color}
+                  strokeWidth={7}
+                  strokeOpacity={0.45}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <text
+                  x={mid[0] * S}
+                  y={mid[1] * S - 14}
+                  textAnchor="middle"
+                  fill="#f4f5f7"
+                  fontSize={30}
+                  fontWeight={700}
+                  stroke="#0e1014"
+                  strokeWidth={6}
+                  paintOrder="stroke"
+                >
+                  {lane.name}
+                </text>
+              </g>
+            );
+          })}
           {markers.map((m) => {
             const cx = m.left * S;
             const cy = m.top * S;

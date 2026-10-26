@@ -39,6 +39,18 @@ def rank_info(gd: GameData, badge: int | None) -> dict | None:
     }
 
 
+def map_layer(ctx: MatchContext) -> dict:
+    """Minimap image plus lane lines (zipline splines from the map data) for orientation."""
+    lanes = []
+    for lane in ctx.geo.lanes.values():
+        pts = [ctx.geo.to_rel(x, y) for x, y in lane.points]
+        lanes.append({
+            "id": lane.id, "name": lane.name, "color": lane.color,
+            "pts": [[round(a, 4), round(b, 4)] for a, b in pts],
+        })
+    return {"image": ctx.geo.images.get("minimap") or ctx.geo.images.get("plain"), "lanes": lanes}
+
+
 def phase_bounds(ctx: MatchContext) -> tuple[int, int, bool]:
     """(end of laning, first Walker down, is_estimate). Phases come from objectives, not a clock."""
     laning, est = ctx.laning_end()
@@ -83,7 +95,7 @@ def build_report(gd: GameData, ctx: MatchContext, rules: Report, replay_status: 
         "deaths": _deaths(gd, ctx, bounds),
         "items": _items(ctx),
         "lane": _lane(gd, ctx),
-        "map": {"image": ctx.geo.images.get("minimap") or ctx.geo.images.get("plain")},
+        "map": map_layer(ctx),
         "players": [
             {**hero_card(gd, q.hero_id), "slot": q.slot, "team": q.team, "is_me": q.slot == p.slot}
             for q in ctx.players
@@ -113,7 +125,7 @@ def _benchmarks(ctx: MatchContext) -> dict:
         if value is None or typical is None:
             continue
         tiles.append({
-            "key": key, "label": label, "value": round(value, 1), "benchmark": round(typical, 1),
+            "key": key, "label": label, "value": round(value), "benchmark": round(typical),
             "p25": stat.get("percentile25"), "p75": stat.get("percentile75"), "better": better,
         })
     return {"available": True, "bracket": list(ctx.bench.bracket), "tiles": tiles}

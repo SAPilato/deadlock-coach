@@ -29,7 +29,10 @@ export default function SoulsChart({
   onPick: (t: number) => void;
 }) {
   const hasAvg = series.some((p) => p.avg != null);
-  const last = series[series.length - 1];
+  let lastAvg = -1;
+  series.forEach((p, i) => {
+    if (p.avg != null) lastAvg = i;
+  });
   return (
     <div>
       <div className="flex flex-wrap gap-4 text-sm text-dim mb-2" aria-hidden>
@@ -77,7 +80,7 @@ export default function SoulsChart({
                 connectNulls
                 isAnimationActive={false}
                 label={(p: { index: number; x: number; y: number }) =>
-                  p.index === series.length - 1 && last.avg != null ? (
+                  p.index === lastAvg ? (
                     <text key="avg-label" x={p.x + 8} y={p.y + 5} fill="#c3c2b7" fontSize={14}>
                       Rank avg
                     </text>

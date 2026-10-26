@@ -16,7 +16,7 @@ const ROWS: { key: string; label: string; types: TimelineEvent["type"][] }[] = [
 function eventStyle(e: TimelineEvent): { icon: string; color: string } {
   switch (e.type) {
     case "kill":
-      return { icon: "⚔", color: ALLY };
+      return { icon: "●", color: ALLY };
     case "death":
       return { icon: "✖", color: "#d03b3b" };
     case "objective":
@@ -72,6 +72,14 @@ export default function Timeline({
         </div>
         <SoulsChart series={report.timeline.series} time={time} onPick={setTime} />
 
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dim" aria-hidden>
+          <span><span style={{ color: ALLY }}>●</span> Your kill</span>
+          <span><span style={{ color: "#d03b3b" }}>✖</span> Your death</span>
+          <span><span style={{ color: ALLY }}>◆</span> Your team took it</span>
+          <span><span style={{ color: ENEMY }}>◆</span> Enemy took it</span>
+          <span>★ Mid Boss</span>
+          <span>• Item</span>
+        </div>
         <div className="space-y-2" aria-label="Match events">
           {ROWS.map((row) => (
             <div key={row.key} className="grid grid-cols-[6.5rem_1fr] items-center gap-2">
@@ -150,7 +158,7 @@ export default function Timeline({
           <span>◎ You (white ring)</span>
           <span>✖ Dead</span>
         </div>
-        <Minimap image={report.map.image} markers={markers} caption={`Positions at ${clock(t)}. Hover a dot for the hero.`} />
+        <Minimap map={report.map} markers={markers} caption={`Positions at ${clock(t)}. Hover a dot for the hero.`} />
       </div>
     </div>
   );

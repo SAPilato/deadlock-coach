@@ -39,6 +39,7 @@ def test_report_has_every_section(api, seed_info):
     assert {d["phase"] for d in r["deaths"]} <= {"early", "mid", "late"}
     assert [c["t"] for c in r["lane"]["checkpoints"]] == [360, 540, 720]
     assert any(s["rule_id"] == "urn_contest" for s in r["skipped"])
+    assert len(r["map"]["lanes"]) == 3 and all(len(lane["pts"]) > 10 for lane in r["map"]["lanes"])
 
 
 def test_paths_for_scrubber(api, seed_info):
