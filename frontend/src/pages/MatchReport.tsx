@@ -64,7 +64,15 @@ export default function MatchReport() {
         <DeathMap r={r} onPick={jump} />
       </Section>
 
-      <Section id="items" title="🛒 Item timing vs your rank">
+      <Section
+        id="items"
+        title="🛒 Item timing vs your rank"
+        aside={
+          <Link to={`/build?match=${r.match.id}`} className="btn">
+            🧪 Open this build in Build Lab
+          </Link>
+        }
+      >
         <ItemTiming items={r.items} onPick={jump} />
       </Section>
 

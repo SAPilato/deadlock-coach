@@ -4,6 +4,18 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (Phase 2: Build Lab page)
+- Build Lab page (`/build`): hero picker, level slider (boons and souls), 12 item
+  slots coloured by category, shop with tier/search/sort, cost, win rate, pick rate
+  and typical buy time at your rank.
+- Live stat table: "No items" vs "This build", or "Now" vs "+ item" while hovering
+  a shop item. Changes in green/red with arrows; estimates tagged `est.`
+- Conditional effects as switches with the condition from the item's own tooltip
+  ("while you are above 65% health"); ability-only bonuses listed separately.
+- DPS dummy: health, bullet resist and headshot sliders; time to kill.
+- Save, open, compare side by side, export/import JSON. Match report links to
+  "Open this build in Build Lab" (items held at the end of that match).
+
 ### Added (Phase 2: Build Lab backend)
 - Stat engine (`backend/app/buildlab`): hero base stats + per-boon growth by level,
   item effects typed by the stat they change, conditional and active effects behind

@@ -235,6 +235,104 @@ export interface SteamHit {
   matches_30d: number | null;
 }
 
+// ---- Build Lab -----------------------------------------------------------------
+
+export type SlotType = "weapon" | "vitality" | "spirit";
+
+export interface ShopItem {
+  id: number;
+  name: string;
+  tier: number;
+  cost: number;
+  slot: SlotType;
+  image?: string;
+  active: boolean;
+  lines: string[];
+  conditional: number;
+  win_rate: number | null;
+  games: number | null;
+  pick_rate: number | null;
+  avg_buy_s: number | null;
+}
+
+export interface ShopData {
+  hero: { id: number; name: string };
+  items: ShopItem[];
+  levels: { level: number; souls: number; boons: number }[];
+  bracket: [number, number];
+  has_rank_stats: boolean;
+  slots: { limit: number; est: boolean; players: number };
+}
+
+export interface Target {
+  hp: number;
+  bullet_resist: number;
+  headshot_pct: number;
+}
+
+export interface Build {
+  hero_id: number;
+  level: number;
+  items: number[];
+  toggles: string[];
+  target: Target;
+}
+
+export interface StatRow {
+  key: string;
+  label: string;
+  group: "Weapon" | "Vitality" | "Spirit" | "Spending";
+  value: number | null;
+  unit: string;
+  status: "data" | "rule" | "est";
+  better: "higher" | "lower";
+  note: string | null;
+}
+
+export interface EffectInfo {
+  key: string;
+  item_id: number;
+  item: string;
+  label: string;
+  stat: string;
+  value: number;
+  postfix: string;
+  kind: "always" | "conditional" | "active";
+  condition: string | null;
+  target: "self" | "enemy" | "ability";
+  on: boolean;
+}
+
+export interface Sheet {
+  hero: { id: number; name: string };
+  level: number;
+  boons: number;
+  souls_for_level: number | null;
+  cost: number;
+  spend: Record<SlotType, number>;
+  rows: StatRow[];
+  dps: {
+    gun_dps: number;
+    dps_reload: number;
+    effective: number;
+    ttk: number | null;
+    headshot_mult: number;
+    target_resist: number;
+    shred: number;
+  };
+  effects: EffectInfo[];
+  notes: string[];
+  items: number[];
+  slots: { limit: number; est: boolean };
+  warnings: string[];
+}
+
+export interface SavedBuild extends Build {
+  id: number;
+  name: string;
+  updated_at: number;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -285,4 +383,19 @@ export const api = {
     return res.json() as Promise<{ status: string }>;
   },
   replayStatus: (id: number) => request<{ status: string; error?: string }>(`/matches/${id}/replay`),
+
+  blHeroes: () => request<HeroCard[]>("/buildlab/heroes"),
+  blShop: (heroId: number) => request<ShopData>(`/buildlab/shop?hero_id=${heroId}`),
+  blCompute: (b: Build) => request<Sheet>("/buildlab/compute", { method: "POST", body: JSON.stringify(b) }),
+  builds: () => request<SavedBuild[]>("/builds"),
+  saveBuild: (b: Build & { id?: number; name: string }) =>
+    request<SavedBuild>("/builds", { method: "POST", body: JSON.stringify(b) }),
+  deleteBuild: (id: number) => request<{ deleted: number }>(`/builds/${id}`, { method: "DELETE" }),
+  importBuild: (data: unknown) =>
+    request<SavedBuild>("/builds/import", { method: "POST", body: JSON.stringify(data) }),
+  exportUrl: (id: number) => `/api/builds/${id}/export`,
+  matchBuild: (matchId: number, t?: number) =>
+    request<{ hero_id: number; level: number; items: number[]; at: number; name: string }>(
+      `/matches/${matchId}/build${t != null ? `?t=${t}` : ""}`,
+    ),
 };

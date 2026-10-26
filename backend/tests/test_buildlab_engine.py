@@ -103,12 +103,28 @@ def test_flat_item_adds_exactly_its_value(data):
 def test_conditional_effect_needs_toggle(data):
     hero = hero_named(data, "Paradox")
     cq = data["by_name"]["Close Quarters"]
-    eff = next(e for e in item_effects(cq) if e.stat == "MODIFIER_VALUE_CLOSE_RANGE_WEAPON_DAMAGE_INCREASE")
-    assert eff.kind == "conditional" and eff.condition
+    effects = item_effects(cq)
+    eff = next(e for e in effects if e.stat == "MODIFIER_VALUE_CLOSE_RANGE_WEAPON_DAMAGE_INCREASE")
+    assert eff.kind == "conditional" and eff.condition == "within 15m"  # range folded into the condition
+    assert not any(e.stat.endswith("_MAX_RANGE") for e in effects)
     off = compute(hero, weapon_of(data, hero), [cq], 1)
     on = compute(hero, weapon_of(data, hero), [cq], 1, toggles={eff.key})
     assert row(on, "weapon_damage") - row(off, "weapon_damage") == pytest.approx(eff.value)
     assert on.dps["gun_dps"] > off.dps["gun_dps"]
+
+
+def test_passive_text_decides_what_is_conditional(data):
+    def effect(item, stat):
+        return next(e for e in item_effects(data["by_name"][item]) if e.stat == stat)
+
+    cdr = effect("Superior Cooldown", "MODIFIER_VALUE_COOLDOWN_REDUCTION_PERCENTAGE")
+    assert cdr.kind == "always"  # "Reduces the Cooldown of your abilities."
+    emblem = effect("Enchanter's Emblem", "MODIFIER_VALUE_TECH_POWER")
+    assert emblem.kind == "conditional" and "65% health" in emblem.condition
+    opening = next(
+        e for e in item_effects(data["by_name"]["Opening Rounds"]) if e.prop == "BaseAttackDamagePercentBonus"
+    )
+    assert opening.kind == "conditional" and "50% health" in opening.condition
 
 
 def test_enemy_debuffs_hit_the_dummy_not_you(data):
@@ -124,6 +140,19 @@ def test_enemy_debuffs_hit_the_dummy_not_you(data):
     assert row(off, "fire_rate") == row(compute(hero, weapon, [], 1), "fire_rate")
     assert on.dps["target_resist"] == pytest.approx(30 - abs(shred.value))
     assert on.dps["effective"] > off.dps["effective"]
+
+
+def test_ability_only_and_enemy_spirit_effects_stay_out_of_your_spirit(data):
+    hero = hero_named(data, "Paradox")
+    weapon = weapon_of(data, hero)
+    base = row(compute(hero, weapon, [], 1), "spirit_power")
+    for name in ("Extra Charge", "Spirit Sap"):
+        item = data["by_name"][name]
+        kinds = {e.target for e in item_effects(item) if e.stat == "MODIFIER_VALUE_TECH_POWER"}
+        assert kinds <= {"ability", "enemy"}, (name, kinds)
+        assert row(compute(hero, weapon, [item], 1), "spirit_power") == base
+    extra = data["by_name"]["Extra Spirit"]
+    assert row(compute(hero, weapon, [extra], 1), "spirit_power") > base
 
 
 def test_weapon_spending_bonus_uses_highest_threshold(data):

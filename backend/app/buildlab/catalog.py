@@ -58,7 +58,7 @@ def shop(gd: GameData, hero_id: int, bracket: tuple[int, int]) -> dict:
     items = []
     for it in shop_items(gd, hero_id):
         effects = item_effects(it)
-        always = [e for e in effects if e.kind == "always" and e.target == "self"]
+        always = [e for e in effects if e.kind == "always" and e.target != "enemy"]
         s = stats.get(it["id"])
         items.append({
             "id": it["id"],

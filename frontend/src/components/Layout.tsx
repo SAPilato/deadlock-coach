@@ -7,10 +7,11 @@ const NAV = [
   { to: "/", label: "Home", icon: "⌂" },
   { to: "/matches", label: "Matches", icon: "▤" },
   { to: "/trends", label: "Trends", icon: "↗" },
+  { to: "/build", label: "Build Lab", icon: "🧪" },
   { to: "/settings", label: "Settings", icon: "⚙" },
 ];
 
-const SOON = ["Build Lab", "Map", "Learn"];
+const SOON = ["Map", "Learn"];
 
 function PatchBanner() {
   const { data } = useQuery({ queryKey: ["meta"], queryFn: api.meta, staleTime: 5 * 60_000 });

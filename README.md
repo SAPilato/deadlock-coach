@@ -29,7 +29,25 @@ Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offlin
 - **Replays (optional)**: auto-download or upload a `.dem` to add the urn check.
 - **Trends**: each habit over your last 20 games: improving, same or worse.
 
-Build Lab, Macro Map and Learn come in later phases.
+## Build Lab (Phase 2)
+
+- Pick a hero and level. Add up to 12 items (the most players held at once in
+  recent matches).
+- See every stat change against "no items", or preview an item by hovering it.
+- Switch conditional effects on or off. Test gun damage on a dummy.
+- Save, compare, export and import builds. Open the build from any reviewed match.
+
+Stats follow [Boon's documented rules](https://boon.readthedocs.io/en/latest/hero-stats.html)
+where they exist. Base gun DPS matches the API's own numbers for every hero.
+
+Build Lab limits:
+- Game data gives vitality and spirit spending bonuses, but not the stat they
+  boost. They are shown on their own rows and not added elsewhere.
+- DPS counts the gun only, at close range. Reload timing is anchored to the
+  API's numbers and tagged `est.`
+- Ability damage and item procs are not simulated.
+
+Macro Map and Learn come in later phases.
 
 ## Where the data comes from
 

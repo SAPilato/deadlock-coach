@@ -53,6 +53,23 @@ export function evidenceValue(v: number | string | null, unit: string): string {
   }
 }
 
+/** A Build Lab stat value: decimals shrink as numbers grow. */
+export function statValue(v: number | null | undefined, unit: string): string {
+  if (v == null || !isFinite(v)) return "–";
+  const a = Math.abs(v);
+  const digits = unit === "s" ? 2 : unit === "m/s" || unit === "%" ? 1 : a >= 100 ? 0 : a >= 10 ? 1 : 2;
+  const n = v.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+  return unit === "%" ? `${n}%` : unit ? `${n} ${unit}` : n;
+}
+
+/** Change between two stat values, signed, same units. Null when unchanged. */
+export function statDelta(before: number | null, after: number | null, unit: string): string | null {
+  if (before == null || after == null) return null;
+  const d = after - before;
+  if (Math.abs(d) < 1e-6) return null;
+  return `${d > 0 ? "+" : "−"}${statValue(Math.abs(d), unit)}`;
+}
+
 /** Is `value` better than `benchmark`, given which direction is good? */
 export function verdict(
   value: number,

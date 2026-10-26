@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, clock, compact, evidenceValue, signed, verdict } from "./format";
+import { ago, clock, compact, evidenceValue, signed, statDelta, statValue, verdict } from "./format";
 
 describe("clock", () => {
   it("formats seconds as m:ss", () => {
@@ -29,6 +29,21 @@ describe("numbers", () => {
   it("describes time ago", () => {
     expect(ago(1000, 1000 + 7200)).toBe("2 h ago");
     expect(ago(1000, 1000 + 86400)).toBe("yesterday");
+  });
+});
+
+describe("stat values", () => {
+  it("picks decimals by size and unit", () => {
+    expect(statValue(1234.6, "")).toBe("1,235");
+    expect(statValue(51.39, "")).toBe("51.4");
+    expect(statValue(6.84, "")).toBe("6.84");
+    expect(statValue(2.585, "s")).toBe("2.59 s");
+    expect(statValue(36.04, "%")).toBe("36%");
+  });
+  it("signs deltas and hides no-change", () => {
+    expect(statDelta(730, 940, "")).toBe("+210");
+    expect(statDelta(2.585, 2.3265, "s")).toBe("−0.26 s");
+    expect(statDelta(5, 5, "")).toBeNull();
   });
 });
 

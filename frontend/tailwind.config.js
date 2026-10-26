@@ -25,6 +25,10 @@ export default {
         s2: "#d95926",
         s3: "#199e70",
         neg: "#e66767",
+        // Item categories (validated all-pairs): weapon, vitality, spirit
+        cw: "#d95926",
+        cv: "#199e70",
+        cs: "#9085e9",
       },
     },
   },

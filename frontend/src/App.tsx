@@ -5,6 +5,7 @@ import Matches from "./pages/Matches";
 import MatchReport from "./pages/MatchReport";
 import Trends from "./pages/Trends";
 import Settings from "./pages/Settings";
+import BuildLab from "./pages/BuildLab";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/matches/:id" element={<MatchReport />} />
         <Route path="/trends" element={<Trends />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/build" element={<BuildLab />} />
       </Routes>
     </Layout>
   );
