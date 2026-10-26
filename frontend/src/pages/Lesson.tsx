@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, type Lesson, type Trends } from "../lib/api";
 import { habitFor } from "../lib/learn";
+import { toneFor } from "../lib/theme";
 import { useLessons } from "../components/LessonLink";
 import { ErrorBox, EstTag, Icon, Loading, ReadAloud } from "../components/ui";
 import { STATUS } from "./Home";
@@ -102,7 +103,7 @@ export default function LessonPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link to={l.try.href} className="btn-primary px-6 py-3 text-xl">
+        <Link to={l.try.href} className="btn-primary px-6 py-3 text-xl" data-tone={toneFor(l.try.href)}>
           <Icon icon={Play} /> {l.try.label}
         </Link>
         <Link to={`/learn/${next.id}`} className="btn ml-auto">

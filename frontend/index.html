@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Deadlock Coach</title>
     <script>
-      // Apply the saved theme before the first paint (lib/theme.ts owns the list).
+      // Apply the theme before the first paint (lib/theme.ts owns the list and the tones).
+      var t = "deco";
       try {
-        var t = localStorage.getItem("coach.theme");
-        if (t) document.documentElement.dataset.theme = t;
+        t = localStorage.getItem("coach.theme.v2") || t;
       } catch (e) {}
+      document.documentElement.dataset.theme = t;
     </script>
   </head>
   <body>

@@ -70,8 +70,8 @@ export default function MatchReport() {
         icon={ShoppingCart}
           title="Item timing vs your rank"
         aside={
-          <Link to={`/build?match=${r.match.id}`} className="btn">
-            <Icon icon={FlaskConical} /> Open this build in Build Lab
+          <Link to={`/build?match=${r.match.id}`} className="btn" data-tone="build">
+            <Icon icon={FlaskConical} className="text-accent" /> Open this build in Build Lab
           </Link>
         }
       >

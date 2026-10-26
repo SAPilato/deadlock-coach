@@ -9,7 +9,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Themes: Settings -> Look, or ?theme=<id> on any page. lib/theme.ts lists them.
+/* Themes: Settings -> Look, or ?theme=<id> on any page. lib/theme.ts lists them. Brass Deco is the default.
    Each sets the same variables; body text stays Atkinson Hyperlegible in all of them.
    Text colours were checked for 4.5:1+ on bg, panel and panel2. */
 :root,
@@ -80,7 +80,82 @@
   --r-chip: 3px;
   --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
   --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
-  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(212 168 75 / 0.10), transparent 60%);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Brass Deco gives each tab its own tone (lib/theme.ts TONES). The brass frame (bg, lines,
+   ink) stays; accents, card hairlines and the page glow change. Each accent reads 7:1+ on
+   the Deco surfaces and sits 25+ degrees of hue away from the data colours on its own page.
+   The [data-tone] descendant form lets a link wear the tone of the tab it opens.
+   Var-based tokens are repeated so they resolve against the local accent. */
+/* Brass: the base metal */
+[data-theme="deco"][data-tone="home"],
+[data-theme="deco"] [data-tone="home"] {
+  --c-accent: 212 168 75;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Amethyst: case review */
+[data-theme="deco"][data-tone="matches"],
+[data-theme="deco"] [data-tone="matches"] {
+  --c-accent: 183 156 240;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Verdigris: patina forms over time */
+[data-theme="deco"][data-tone="trends"],
+[data-theme="deco"] [data-tone="trends"] {
+  --c-accent: 85 196 170;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Sapphire: lab glass */
+[data-theme="deco"][data-tone="build"],
+[data-theme="deco"] [data-tone="build"] {
+  --c-accent: 141 178 242;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Neon rose: city signs at night */
+[data-theme="deco"][data-tone="map"],
+[data-theme="deco"] [data-tone="map"] {
+  --c-accent: 232 162 196;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Ivory: old pages */
+[data-theme="deco"][data-tone="learn"],
+[data-theme="deco"] [data-tone="learn"] {
+  --c-accent: 233 220 188;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
+}
+
+/* Silver: neutral */
+[data-theme="deco"][data-tone="settings"],
+[data-theme="deco"] [data-tone="settings"] {
+  --c-accent: 184 193 203;
+  --c-onaccent: 18 14 8;
+  --card-shadow: inset 0 0 0 4px rgb(var(--c-panel)), inset 0 0 0 5px rgb(var(--c-accent) / 0.3);
+  --primary-shadow: inset 0 0 0 2px rgb(var(--c-accent)), inset 0 0 0 3px rgb(var(--c-onaccent) / 0.45);
+  --page-texture: radial-gradient(ellipse at 50% -20%, rgb(var(--c-accent) / 0.12), transparent 60%);
 }
 
 [data-theme="casefile"] {

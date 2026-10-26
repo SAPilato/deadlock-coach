@@ -57,7 +57,7 @@ export default function Home() {
                   <div className="text-2xl font-bold tnum">{num(last.souls_per_min)}</div>
                 </div>
               </div>
-              <Link to={`/matches/${last.match_id}`} className="btn-primary">
+              <Link to={`/matches/${last.match_id}`} className="btn-primary" data-tone="matches">
                 <Icon icon={Search} /> Review this match
               </Link>
             </>
@@ -66,17 +66,17 @@ export default function Home() {
 
         <div className="card space-y-3">
           <h2 className="label">Go to</h2>
-          <Link to="/matches" className="btn w-full justify-start">
-            <Icon icon={List} /> All matches
+          <Link to="/matches" className="btn w-full justify-start" data-tone="matches">
+            <Icon icon={List} className="text-accent" /> All matches
           </Link>
-          <Link to="/trends" className="btn w-full justify-start">
-            <Icon icon={TrendingUp} /> Habit trends
+          <Link to="/trends" className="btn w-full justify-start" data-tone="trends">
+            <Icon icon={TrendingUp} className="text-accent" /> Habit trends
           </Link>
-          <Link to="/learn" className="btn w-full justify-start">
-            <Icon icon={BookOpen} /> Lessons
+          <Link to="/learn" className="btn w-full justify-start" data-tone="learn">
+            <Icon icon={BookOpen} className="text-accent" /> Lessons
           </Link>
-          <Link to="/settings" className="btn w-full justify-start">
-            <Icon icon={SettingsIcon} /> Settings
+          <Link to="/settings" className="btn w-full justify-start" data-tone="settings">
+            <Icon icon={SettingsIcon} className="text-accent" /> Settings
           </Link>
         </div>
       </div>

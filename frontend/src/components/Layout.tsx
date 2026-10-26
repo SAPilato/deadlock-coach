@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useLayoutEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { applyTone, toneFor } from "../lib/theme";
 import { BookOpen, Eye, FlaskConical, House, List, Map as MapIcon, Settings as SettingsIcon, TrendingUp, TriangleAlert } from "lucide-react";
 import { Icon } from "./ui";
 import ErrorBoundary from "./ErrorBoundary";
@@ -54,6 +55,10 @@ function SampleBanner() {
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  // Brass Deco: each tab has its own tone. Layout effect so the new tone lands before paint.
+  useLayoutEffect(() => {
+    applyTone(pathname);
+  }, [pathname]);
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur border-b border-line">
@@ -67,11 +72,12 @@ export default function Layout({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 end={n.to === "/"}
+                data-tone={toneFor(n.to)}
                 className={({ isActive }) =>
-                  `rounded-xl px-3 py-1.5 font-bold ${isActive ? "bg-panel2 text-ink" : "text-dim hover:text-ink"}`
+                  `rounded-xl px-3 py-1.5 font-bold ${isActive ? "bg-panel2 text-ink shadow-[inset_0_-2px_0_rgb(var(--c-accent))]" : "text-dim hover:text-ink"}`
                 }
               >
-                <Icon icon={n.icon} className="mr-1.5" />
+                <Icon icon={n.icon} className="mr-1.5 text-accent" />
                 {n.label}
               </NavLink>
             ))}

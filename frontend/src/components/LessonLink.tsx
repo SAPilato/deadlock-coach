@@ -14,8 +14,8 @@ export default function LessonLink({ id, big = false }: { id: string | null; big
   if (!id) return null;
   const lesson = q.data?.find((l) => l.id === id);
   return (
-    <Link to={`/learn/${id}`} className={big ? "btn" : "chip font-bold text-accent hover:border-accent"}>
-      <Icon icon={BookOpen} /> {lesson ? `Lesson: ${lesson.title}` : "Lesson"} →
+    <Link to={`/learn/${id}`} data-tone="learn" className={big ? "btn" : "chip font-bold text-accent hover:border-accent"}>
+      <Icon icon={BookOpen} className="text-accent" /> {lesson ? `Lesson: ${lesson.title}` : "Lesson"} →
     </Link>
   );
 }

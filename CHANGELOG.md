@@ -4,6 +4,13 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Changed (Brass Deco with tab tones)
+- Brass Deco is the default look. Each tab has its own tone: Home brass, Matches
+  amethyst, Trends verdigris, Build Lab sapphire, Map neon rose, Learn ivory,
+  Settings silver. The nav shows every tab's tone; links wear their target tab's tone.
+- Tones drive accents, card hairlines and the page glow; borders and ink stay brass.
+- The theme is only saved when you pick one (v1 saved Slate on every first visit).
+
 ### Added (look and feel)
 - Four themes in Settings → Look: Slate, Brass Deco, Case File (light) and Neon HUD.
   Colours, heading font and corners change per theme; body text stays Atkinson

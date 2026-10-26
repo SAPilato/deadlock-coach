@@ -37,10 +37,23 @@ Game phases come from objectives, not a clock:
 
 ## Look
 
-Settings → Look has four themes. Each one changes the whole app right away:
-**Slate** (calm dark), **Brass Deco** (Deadlock's 1920s brass and black),
-**Case File** (light paper and ink) and **Neon HUD** (esports, cyan).
-Add `?theme=deco` (or `slate`, `casefile`, `hud`) to any page to try one.
+The app is built around **Brass Deco**: Deadlock's 1920s occult city, brass on black.
+Each tab has its own tone inside the same brass frame:
+
+| Tab | Tone | Why |
+|---|---|---|
+| Home | Brass | the base metal |
+| Matches | Amethyst | case review |
+| Trends | Verdigris | patina forms over time |
+| Build Lab | Sapphire | lab glass |
+| Map | Neon rose | city signs at night |
+| Learn | Ivory | old pages |
+| Settings | Silver | neutral |
+
+Links that open another tab wear that tab's tone. Each tone reads 7:1 or better on
+the Deco surfaces and stays clear of the data colours on its own page.
+Settings → Look still offers Slate, Case File (light) and Neon HUD.
+Add `?theme=slate` (or `casefile`, `hud`, `deco`) to any page to try one.
 Body text is Atkinson Hyperlegible in every theme. The UI uses line icons
 (lucide-react), never emojis; a test fails if an emoji is added.
 

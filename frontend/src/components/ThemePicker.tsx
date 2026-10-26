@@ -1,5 +1,5 @@
 import { Check, Target } from "lucide-react";
-import { applyTheme, THEMES, useTheme } from "../lib/theme";
+import { applyTheme, THEMES, TONES, useTheme } from "../lib/theme";
 import { Icon } from "./ui";
 
 /** Each option is drawn in its own theme (data-theme on the button scopes the colours and fonts). */
@@ -16,9 +16,9 @@ export default function ThemePicker() {
             data-theme={t.id}
             aria-pressed={on}
             onClick={() => applyTheme(t.id)}
-            className={`rounded-2xl border-2 bg-bg p-3 text-left text-ink ${on ? "border-accent" : "border-line hover:border-accent"}`}
+            className={`flex flex-col rounded-2xl border-2 bg-bg p-3 text-left text-ink ${on ? "border-accent" : "border-line hover:border-accent"}`}
           >
-            <div className="card space-y-3 p-4">
+            <div className="card flex-1 space-y-3 p-4">
               <div className="flex items-center gap-2">
                 <h3 className="font-display text-2xl font-bold">{t.name}</h3>
                 {on && (
@@ -40,6 +40,15 @@ export default function ThemePicker() {
               <p className="text-dim">
                 <b className="text-3xl text-ink tnum">3 of 10</b> recent games
               </p>
+              {t.id === "deco" && (
+                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-dim" aria-label="Tab tones">
+                  {TONES.map((tone) => (
+                    <li key={tone.id} data-tone={tone.id} className="inline-flex items-center gap-1">
+                      <span className="inline-block h-3 w-3 rounded-full bg-accent" aria-hidden /> {tone.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </button>
         );

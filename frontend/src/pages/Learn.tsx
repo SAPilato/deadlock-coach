@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, type Lesson, type LessonTopic } from "../lib/api";
 import { suggestLessons, type Suggestion } from "../lib/learn";
+import { toneFor } from "../lib/theme";
 import { useLessons } from "../components/LessonLink";
 import { ErrorBox, Icon, Loading } from "../components/ui";
 import { STATUS } from "./Home";
@@ -99,7 +100,9 @@ function LessonCard({ lesson: l }: { lesson: Lesson }) {
         <h3 className="text-xl font-bold">{l.title}</h3>
       </div>
       <p className="text-dim">{l.summary}</p>
-      <p className="text-sm font-bold text-accent"><Icon icon={Play} /> {l.try.label}</p>
+      <p className="text-sm font-bold text-accent" data-tone={toneFor(l.try.href)}>
+        <Icon icon={Play} /> {l.try.label}
+      </p>
     </Link>
   );
 }
