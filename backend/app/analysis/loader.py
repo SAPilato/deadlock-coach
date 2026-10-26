@@ -10,15 +10,18 @@ from app.gamedata.service import GameData
 
 log = logging.getLogger(__name__)
 
-_geo_memo: dict[tuple[int, int], MapGeometry] = {}
+_geo_memo: dict[tuple[int, int, int], MapGeometry] = {}
 
 
 def geometry(gd: GameData) -> MapGeometry:
-    map_data, generic = gd.map_data(), gd.generic_data()
-    key = (id(map_data), id(generic))
+    """Map geometry from asset data, corrected by the newest parsed replay when there is one."""
+    from app.replay.jobs import latest_truth
+
+    map_data, generic, truth = gd.map_data(), gd.generic_data(), latest_truth()
+    key = (id(map_data), id(generic), id(truth))
     if key not in _geo_memo:
         _geo_memo.clear()
-        _geo_memo[key] = MapGeometry(map_data, generic)
+        _geo_memo[key] = MapGeometry(map_data, generic, truth)
     return _geo_memo[key]
 
 

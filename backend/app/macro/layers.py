@@ -19,6 +19,10 @@ TIPS = {
     "statue": "Break statues on your way. Check them after each fight.",
     "buff": "Grab it when you pass. It is free value.",
     "urn_spawn": "When the urn spawns, move toward it with your team.",
+    "urn_site": "When the urn spawns, move toward it with your team.",
+    "base_guardian": "Losing these opens your base. Defend them as a team.",
+    "shrine": "Shrines protect the Patron. Take them before pushing it.",
+    "mid_boss": "Take it after winning a fight. Watch for steals.",
     "urn_pad": "Deliver the urn here. Guard the carrier.",
     "shop": "Buy when you pass. Do not hold many souls.",
     "move": "Use it to rotate faster between lanes.",
@@ -71,6 +75,20 @@ def build_layers(gd: GameData, geo: MapGeometry) -> dict:
         objectives.append({"left": round(left, 4), "top": round(top, 4), "label": name, "kind": kind, "facts": f,
                            "tip": TIPS[kind], "team": team})
 
+    # Objectives the asset data lacks; positions come from a post-update replay (app/macro/truth.py).
+    extra_names = {"barracks": ("base_guardian", "Base Guardian", "base_guardians_gold_kill"),
+                   "shrine": ("shrine", "Shrine", "shrines_gold_kill"), "mid_boss": ("mid_boss", "Mid Boss", None)}
+    for o in geo.extra:
+        if o["kind"] not in extra_names:
+            continue
+        kind, name, bounty = extra_names[o["kind"]]
+        left, top = geo.to_rel(o["x"], o["y"])
+        team = o.get("team")
+        f = facts(TEAM_NAMES.get(team) if team is not None else None, f"{o['hp']:,} HP" if o.get("hp") else None,
+                  f"{params[bounty]:,} souls" if bounty and params.get(bounty) else None)
+        objectives.append({"left": round(left, 4), "top": round(top, 4), "label": name, "kind": kind, "facts": f,
+                           "tip": TIPS[kind], "team": team})
+
     camps = []
     for c in m.get("neutral_camps") or []:
         k = c.get("kind")
@@ -98,8 +116,12 @@ def build_layers(gd: GameData, geo: MapGeometry) -> dict:
         {"id": "lanes", "label": "Lanes and ziplines", "on": True, "lines": lanes, "points": []},
         {"id": "objectives", "label": "Guardians and Walkers", "on": True, "points": objectives},
         {"id": "camps", "label": "Jungle camps", "on": True, "points": camps},
-        {"id": "urn", "label": "Urn spawns and drop-offs", "on": True,
-         "points": group("soul_urn_spawns", "Urn spawn", "urn_spawn") + group("soul_urn_pads", "Urn drop-off", "urn_pad")},
+        # Since City Never Sleeps the urn uses 2 sites (spawn on one, deliver to the other).
+        # The asset data still lists 4 older spawn points; they are left out.
+        {"id": "urn", "label": "Urn sites", "on": True, "points": (
+            [_pt(geo, {"position": [x, y]}, "Urn site", "urn_site", "Spawns or is delivered here (checked in a replay).")
+             for x, y in geo.urn_sites]
+            if geo.urn_sites else group("soul_urn_pads", "Urn site", "urn_site", "From map data, not checked."))},
         {"id": "shops", "label": "Shops", "on": False, "points": shops},
         {"id": "statues", "label": "Golden statues", "on": False, "points": group("golden_statues", "Golden statue", "statue")},
         {"id": "crates", "label": "Crates", "on": False,

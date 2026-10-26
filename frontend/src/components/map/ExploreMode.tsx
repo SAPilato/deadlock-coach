@@ -20,6 +20,14 @@ function glyph(p: MapPoint): { ch: string; color: string; size: number } {
       return { ch: "■", color: team, size: 30 };
     case "patron":
       return { ch: "★", color: team, size: 36 };
+    case "base_guardian":
+      return { ch: "◆", color: team, size: 24 };
+    case "shrine":
+      return { ch: "◈", color: team, size: 26 };
+    case "mid_boss":
+      return { ch: "✹", color: INK, size: 38 };
+    case "urn_site":
+      return { ch: "◎", color: INK, size: 34 };
     case "camp":
       return { ch: "●", color: CAMP, size: p.size === "strong" ? 26 : p.size === "weak" ? 14 : 19 };
     case "vault":

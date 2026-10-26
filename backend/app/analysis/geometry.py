@@ -105,7 +105,7 @@ class Lane:
 
 
 class MapGeometry:
-    def __init__(self, map_data: dict, generic_data: dict):
+    def __init__(self, map_data: dict, generic_data: dict, truth: dict | None = None):
         self.radius = map_data.get("radius")
         self.images = map_data.get("images", {})
         samples = []
@@ -151,6 +151,23 @@ class MapGeometry:
                 n = int(key.rsplit("_", 1)[1])
                 self.objective_lane[n] = min(self.lanes.values(), key=lambda L: L.dist(x, y)).id
 
+        # Replay truth (see app/macro/truth.py) beats the asset data's icon positions,
+        # and adds objectives the asset data lacks: Base Guardians, Shrines, Mid Boss.
+        self.truth = truth
+        self.extra: list[dict] = []
+        self.urn_sites: list[tuple[float, float]] | None = None
+        if truth:
+            lane_num = {lane_id: n for n, lane_id in self.objective_lane.items()}
+            for o in truth.get("objectives", []):
+                team, kind, lane = o.get("team"), o["kind"], o.get("lane")
+                if kind in ("tier1", "tier2") and team in (0, 1) and lane in lane_num:
+                    self.objectives[f"team{team}_{kind}_{lane_num[lane]}"] = (o["x"], o["y"])
+                elif kind == "titan" and team in (0, 1):
+                    self.objectives[f"team{team}_titan"] = (o["x"], o["y"])
+                else:
+                    self.extra.append(o)
+            self.urn_sites = [(s["x"], s["y"]) for s in truth.get("urn_sites", [])]
+
     # ---- transforms ----------------------------------------------------------
 
     def to_rel(self, x: float, y: float) -> tuple[float, float]:
@@ -179,6 +196,12 @@ class MapGeometry:
             return self.objectives.get(f"team{owner_team}_{kind}_{lane_num}")
         if kind in ("titan", "core"):
             return self.objectives.get(f"team{owner_team}_{kind}")
+        if kind == "barracks" and lane_num is not None:
+            # Two Base Guardians per lane stand side by side; use their midpoint.
+            lane_id = self.objective_lane.get(lane_num)
+            pair = [(o["x"], o["y"]) for o in self.extra if o["kind"] == "barracks" and o.get("team") == owner_team and o.get("lane") == lane_id]
+            if pair:
+                return sum(p[0] for p in pair) / len(pair), sum(p[1] for p in pair) / len(pair)
         return None
 
     def describe(self, team: int, x: float, y: float) -> str:

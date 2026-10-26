@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 RESULT_NAME = "replay.json"
 WAVES_NAME = "waves.json.gz"
+TRUTH_NAME = "truth.json"
 # Parsed results of the seed's sample replay, so the urn check and wave view work out of the box.
 SEED_REPLAYS = Path(__file__).resolve().parents[1] / "seed" / "data" / "replays"
 
@@ -65,6 +66,22 @@ def matches_with_waves() -> list[int]:
     return sorted(ids, reverse=True)
 
 
+_truth_memo: dict[tuple, dict | None] = {}
+
+
+def latest_truth() -> dict | None:
+    """Live-map truth from the most recent parsed replay (yours first, else the bundled sample)."""
+    from app.macro.truth import load_truth
+
+    files = [p for base in (DEMO_DIR, SEED_REPLAYS) if base.exists() for p in base.glob(f"*/{TRUTH_NAME}")]
+    key = tuple(sorted((str(p), p.stat().st_mtime) for p in files))
+    if key not in _truth_memo:
+        _truth_memo.clear()
+        truths = [t for t in (load_truth(p) for p in files) if t and t.get("objectives")]
+        _truth_memo[key] = max(truths, key=lambda t: (t.get("start_time") or 0, t["match_id"]), default=None)
+    return _truth_memo[key]
+
+
 def waves_for(match_id: int) -> dict | None:
     from app.macro.waves import load_waves
 
@@ -82,6 +99,8 @@ def set_status(st: AppState, match_id: int, status: str, path: str | None = None
 def run_job(st: AppState, match_id: int, uploaded: Path | None = None) -> None:
     """Download (unless uploaded), parse and store. Runs in a background thread."""
     from app.analysis.loader import geometry
+    from app.gamedata.client import ApiError
+    from app.macro.truth import save_truth
     from app.macro.waves import save_waves
     from app.replay.download import ReplayUnavailable, download_demo, unpack
     from app.replay.parser import parse_demo
@@ -95,10 +114,16 @@ def run_job(st: AppState, match_id: int, uploaded: Path | None = None) -> None:
             set_status(st, match_id, "parsing")
             dem = unpack(uploaded)
         set_status(st, match_id, "parsing", path=str(dem))
-        data, waves = parse_demo(dem, match_id, geometry(st.gd))
+        try:
+            start_time = st.gd.match_metadata(match_id)["match_info"].get("start_time")
+        except (ApiError, KeyError):
+            start_time = None
+        data, waves, truth = parse_demo(dem, match_id, geometry(st.gd), start_time)
         data.save(folder / RESULT_NAME)
         if waves:
             save_waves(waves, folder / WAVES_NAME)
+        if truth:
+            save_truth(truth, folder / TRUTH_NAME)
         dem.unlink(missing_ok=True)  # demos are 300-500 MB; the parsed result is all we keep
         set_status(st, match_id, "done")
     except ReplayUnavailable as e:
