@@ -4,6 +4,20 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (Phase 3: Macro Map backend)
+- Map layers from `/v1/assets/map`: lanes/ziplines, Guardians and Walkers (HP and
+  soul bounty from game data), 51 jungle camps (NPC names and HP), urn spawns and
+  drop-offs, shops, golden statues, crates, buffs, teleporters/pads/ropes/vents.
+- Trooper waves from replays (Boon `troopers`): waves per lane every 3 s and where
+  the two sides met each minute. Wave timings from game convars (first wave 16 s,
+  then every 30/25/20 s). The sample replay's results are bundled.
+- Replay parsing now also saves wave data (`waves.json.gz`, ~30 KB).
+- Heatmap of your positions per game phase over your last N matches, with the
+  objectives that fell.
+- "What would you do?" moments: 20 s before flagged mistakes, deaths and lost
+  objectives, with the next 40 s of positions and what you actually did.
+- GZip responses.
+
 ### Added (Phase 2: Build Lab page)
 - Build Lab page (`/build`): hero picker, level slider (boons and souls), 12 item
   slots coloured by category, shop with tier/search/sort, cost, win rate, pick rate

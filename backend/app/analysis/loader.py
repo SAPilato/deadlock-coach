@@ -34,7 +34,7 @@ def load_bench(gd: GameData, hero_id: int, bracket: tuple[int, int]) -> Benchmar
 
 
 def load_context(
-    gd: GameData, match_id: int, account_id: int, bracket: tuple[int, int], replay=None
+    gd: GameData, match_id: int, account_id: int, bracket: tuple[int, int], replay=None, with_bench: bool = True
 ) -> MatchContext:
     meta = gd.match_metadata(match_id)
     info = meta.get("match_info", meta)
@@ -49,6 +49,6 @@ def load_context(
         geo=geometry(gd),
         enums=gd.enums(),
         objective_label=gd.objective_label,
-        bench=load_bench(gd, me["hero_id"], bracket),
+        bench=load_bench(gd, me["hero_id"], bracket) if with_bench else None,
         replay=replay,
     )

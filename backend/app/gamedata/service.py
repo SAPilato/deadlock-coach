@@ -92,6 +92,13 @@ class GameData:
     def npc_units(self) -> list[dict]:
         return self._asset("/v1/assets/npc-units")
 
+    def convars(self) -> dict:
+        return self._asset("/v1/assets/convars")
+
+    def convar(self, name: str, default=None):
+        row = self.convars().get(name)
+        return row.get("default", default) if row else default
+
     def _indexed(self, name: str, loader) -> dict[int, dict]:
         rows = loader()
         key = f"{name}:{id(rows)}"
@@ -116,9 +123,9 @@ class GameData:
         """Name + kind + lane number for an ECitadelTeamObjective value."""
         short = self.enums().get("ECitadelTeamObjective", {}).get(str(objective_id), f"Objective{objective_id}")
         parts = objective_parts(short)
-        return {"id": objective_id, "enum": short, **parts, "name": self._objective_display(parts["kind"])}
+        return {"id": objective_id, "enum": short, **parts, "name": self.objective_display(parts["kind"])}
 
-    def _objective_display(self, kind: str) -> str:
+    def objective_display(self, kind: str) -> str:
         # Names come from NPC unit data where it has them (Guardian, Walker, Base Guardian).
         npc_class = {"tier1": "npc_boss_tier1", "tier2": "npc_boss_tier2", "barracks": "npc_barrack_boss"}.get(kind)
         if npc_class:

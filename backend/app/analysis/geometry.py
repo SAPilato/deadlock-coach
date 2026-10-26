@@ -65,6 +65,44 @@ class Lane:
         pts = self.points
         return min(_seg_dist((x, y), pts[i], pts[i + 1]) for i in range(len(pts) - 1))
 
+    @property
+    def cumulative(self) -> list[float]:
+        if not hasattr(self, "_cum"):
+            cum = [0.0]
+            for a, b in zip(self.points, self.points[1:]):
+                cum.append(cum[-1] + math.dist(a, b))
+            self._cum = cum
+        return self._cum
+
+    @property
+    def length(self) -> float:
+        return self.cumulative[-1]
+
+    def project(self, x: float, y: float) -> tuple[float, float]:
+        """(distance along the lane from points[0], distance from the lane)."""
+        best = (0.0, float("inf"))
+        cum = self.cumulative
+        for i, (a, b) in enumerate(zip(self.points, self.points[1:])):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            L = dx * dx + dy * dy
+            t = 0.0 if L == 0 else max(0.0, min(1.0, ((x - a[0]) * dx + (y - a[1]) * dy) / L))
+            px, py = a[0] + t * dx, a[1] + t * dy
+            d = math.hypot(x - px, y - py)
+            if d < best[1]:
+                best = (cum[i] + t * math.sqrt(L), d)
+        return best
+
+    def point_at(self, s: float) -> tuple[float, float]:
+        cum = self.cumulative
+        s = max(0.0, min(s, cum[-1]))
+        for i in range(len(cum) - 1):
+            if cum[i + 1] >= s:
+                seg = cum[i + 1] - cum[i]
+                t = 0.0 if seg == 0 else (s - cum[i]) / seg
+                (ax, ay), (bx, by) = self.points[i], self.points[i + 1]
+                return ax + t * (bx - ax), ay + t * (by - ay)
+        return self.points[-1]
+
 
 class MapGeometry:
     def __init__(self, map_data: dict, generic_data: dict):
@@ -99,14 +137,19 @@ class MapGeometry:
             pts = [(ox + p[0], oy + p[1]) for p in z["P0_points"]]
             self.lanes[idx] = Lane(idx, info["lane_name"], "#" + _hex(z["color"]), pts)
 
+        self.cores = {t: self.objectives.get(f"team{t}_core") for t in (0, 1)}
+        # Orient every lane from team 0's end to team 1's end, so "progress" means the same everywhere.
+        for lane in self.lanes.values():
+            c0 = self.cores.get(0)
+            if c0 and math.dist(lane.points[-1], c0) < math.dist(lane.points[0], c0):
+                lane.points = lane.points[::-1]
+
         # Objective lane number N -> lane id, via the zipline closest to team0's Guardian N.
         self.objective_lane: dict[int, int] = {}
         for key, (x, y) in self.objectives.items():
             if key.startswith("team0_tier1_") and self.lanes:
                 n = int(key.rsplit("_", 1)[1])
                 self.objective_lane[n] = min(self.lanes.values(), key=lambda L: L.dist(x, y)).id
-
-        self.cores = {t: self.objectives.get(f"team{t}_core") for t in (0, 1)}
 
     # ---- transforms ----------------------------------------------------------
 

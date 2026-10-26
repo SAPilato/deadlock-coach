@@ -33,6 +33,16 @@ def test_rule_templates_are_short(rule_id):
             assert words(s) <= MAX_WORDS, f"{rule_id}.{key}: {s!r}"
 
 
+def test_map_tips_and_scenario_options_are_short():
+    from app.macro.layers import TIPS
+    from app.macro.scenarios import OPTIONS
+
+    for key, tip in TIPS.items():
+        for s in sentences(tip):
+            assert words(s) <= MAX_WORDS, f"tip {key}: {s!r}"
+    assert all(len(o["label"].split()) <= 4 for o in OPTIONS)
+
+
 def test_rendered_findings_on_seed_matches_are_short(seed_gd, seed_info):
     from app.analysis.loader import load_context
 

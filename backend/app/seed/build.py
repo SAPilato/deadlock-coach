@@ -26,7 +26,7 @@ def build(account_id: int = SAMPLE_ACCOUNT, n_matches: int = N_MATCHES) -> None:
     gd = st.gd
     build_no = gd.live_build()
     gd.latest_patch()
-    for loader in (gd.heroes, gd.items, gd.ranks, gd.generic_data, gd.map_data, gd.npc_units, gd.enums):
+    for loader in (gd.heroes, gd.items, gd.ranks, gd.generic_data, gd.map_data, gd.npc_units, gd.convars, gd.enums):
         loader()
 
     history = gd.match_history(account_id)

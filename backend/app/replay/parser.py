@@ -49,8 +49,11 @@ def urn_episodes(rows: list[dict], to_seconds) -> list[dict]:
     return episodes
 
 
-def parse_demo(path: Path, match_id: int) -> ReplayData:
+def parse_demo(path: Path, match_id: int, geo=None) -> tuple[ReplayData, dict | None]:
+    """Urn episodes for the rules, plus trooper waves for the Macro Map when `geo` is given."""
     from boon import Demo  # imported lazily: heavy native module
+
+    from app.macro.waves import extract_waves
 
     demo = Demo(str(path), preload=False)
     notes: list[str] = []
@@ -60,4 +63,5 @@ def parse_demo(path: Path, match_id: int) -> ReplayData:
     episodes = urn_episodes(rows, lambda tick: _match_seconds(demo, tick))
     if not episodes:
         notes.append("No urn events found in this replay.")
-    return ReplayData(match_id=match_id, urn_events=episodes, notes=notes)
+    waves = extract_waves(demo, geo) if geo is not None else None
+    return ReplayData(match_id=match_id, urn_events=episodes, notes=notes), waves
