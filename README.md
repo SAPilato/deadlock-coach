@@ -47,7 +47,24 @@ Build Lab limits:
   API's numbers and tagged `est.`
 - Ability damage and item procs are not simulated.
 
-Macro Map and Learn come in later phases.
+## Macro Map (Phase 3)
+
+- **Explore:** toggle layers (lanes, Guardians/Walkers, camps, urn, shops, statues,
+  crates, buffs, movement, tunnels). Hover a marker for facts and a tip. Plan a
+  route and see distance and travel time for any hero.
+- **Waves:** real trooper waves from a replay, with play/pause, and where each
+  lane's waves met every minute. A sample replay is bundled.
+- **Your heatmap:** where you spent time in laning, mid and late game over your
+  last 10 matches, with the objectives that fell.
+- **What would you do?:** real moments from your games. Pick an action, then see
+  what you did and what happened next.
+
+Macro Map limits:
+- Distances use 1 game unit = 0.0254 m (Source convention, not confirmed): `est.`
+- Routes are straight lines; walls and ziplines are ignored.
+- Wave data needs a replay. Your own appear after you load a replay on a match.
+
+Learn comes in a later phase.
 
 ## Where the data comes from
 

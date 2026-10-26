@@ -8,10 +8,11 @@ const NAV = [
   { to: "/matches", label: "Matches", icon: "▤" },
   { to: "/trends", label: "Trends", icon: "↗" },
   { to: "/build", label: "Build Lab", icon: "🧪" },
+  { to: "/map", label: "Map", icon: "🗺" },
   { to: "/settings", label: "Settings", icon: "⚙" },
 ];
 
-const SOON = ["Map", "Learn"];
+const SOON = ["Learn"];
 
 function PatchBanner() {
   const { data } = useQuery({ queryKey: ["meta"], queryFn: api.meta, staleTime: 5 * 60_000 });

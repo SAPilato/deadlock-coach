@@ -4,6 +4,13 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (Phase 3: Macro Map page)
+- Macro Map page (`/map`) with four modes: Explore (layers, hover tips, rotation
+  planner with walk/sprint times), Waves (replay playback, meeting point per lane
+  each minute), Your heatmap (per phase), What would you do? (pick, then replay
+  the next 40 s with what you actually did and the matching finding).
+- Markers use shape for identity and team colour for side, with a legend.
+
 ### Added (Phase 3: Macro Map backend)
 - Map layers from `/v1/assets/map`: lanes/ziplines, Guardians and Walkers (HP and
   soul bounty from game data), 51 jungle camps (NPC names and HP), urn spawns and

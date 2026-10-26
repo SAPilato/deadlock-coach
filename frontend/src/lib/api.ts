@@ -333,6 +333,89 @@ export interface SavedBuild extends Build {
   updated_at: number;
 }
 
+// ---- Macro Map -------------------------------------------------------------------
+
+export interface MapPoint {
+  left: number;
+  top: number;
+  label: string;
+  kind: string;
+  facts: string | null;
+  tip: string | null;
+  target?: [number, number];
+  team?: number;
+  size?: string;
+}
+
+export interface MapLayerData {
+  id: string;
+  label: string;
+  on: boolean;
+  points: MapPoint[];
+  lines?: { id: number; name: string; color: string; pts: [number, number][] }[];
+}
+
+export interface MacroLayers {
+  image?: string;
+  overlays: { id: string; label: string; image?: string }[];
+  layers: MapLayerData[];
+  transform: { ax: number; bx: number; ay: number; by: number };
+  meters_per_unit: number;
+  teams: Record<string, string>;
+  heroes: (HeroCard & { move: number; sprint: number })[];
+}
+
+export interface WavesData {
+  available: { match_id: number; sample: boolean; hero?: HeroCard; team?: number; start_time?: number }[];
+  match_id: number;
+  my_team: number | null;
+  teams: Record<string, string>;
+  lanes: { id: number; name: string; color: string; pts: [number, number][] }[];
+  schedule: {
+    first: number;
+    every: number;
+    late_every: number;
+    late_after_min: number;
+    very_late_every: number;
+    very_late_after_min: number;
+    squad: number;
+  } | null;
+  step: number;
+  frames: { t: number; lanes: Record<string, { w: [number, number, number][]; c: number | null }> }[];
+  meets: { minute: number; lanes: Record<string, number> }[];
+}
+
+export interface HeatmapData {
+  grid: number;
+  matches: number;
+  phases: Record<"early" | "mid" | "late", { cells: [number, number, number][]; max: number; minutes: number }>;
+  objectives: { left: number; top: number; phase: string; taken: boolean; name: string; match_id: number; t: number }[];
+}
+
+export interface ScenarioRow {
+  match_id: number;
+  t: number;
+  hero: HeroCard;
+  start_time: number;
+  habit: string | null;
+  label: string;
+}
+
+export interface Scenario {
+  match_id: number;
+  t: number;
+  hero: string;
+  team: number;
+  players: { slot: number; hero: string; hero_id: number; side: "me" | "ally" | "enemy" }[];
+  frames: { t: number; pos: { slot: number; left: number; top: number; alive: boolean; hp: number | null }[] }[];
+  objectives: { left: number; top: number; kind: string; ally: boolean; alive: boolean }[];
+  souls: { you: number; them: number };
+  options: { id: string; label: string }[];
+  did: { id: string; label: string };
+  events: { t: number; text: string; side: string }[];
+  finding: { habit: string; headline: string; do_next: string } | null;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -394,6 +477,11 @@ export const api = {
   importBuild: (data: unknown) =>
     request<SavedBuild>("/builds/import", { method: "POST", body: JSON.stringify(data) }),
   exportUrl: (id: number) => `/api/builds/${id}/export`,
+  macroLayers: () => request<MacroLayers>("/macro/layers"),
+  macroWaves: (matchId?: number) => request<WavesData>(`/macro/waves${matchId ? `?match_id=${matchId}` : ""}`),
+  macroHeatmap: (n = 10) => request<HeatmapData>(`/macro/heatmap?n=${n}`),
+  macroScenarios: () => request<ScenarioRow[]>("/macro/scenarios"),
+  macroScenario: (matchId: number, t: number) => request<Scenario>(`/macro/scenario?match_id=${matchId}&t=${t}`),
   matchBuild: (matchId: number, t?: number) =>
     request<{ hero_id: number; level: number; items: number[]; at: number; name: string }>(
       `/matches/${matchId}/build${t != null ? `?t=${t}` : ""}`,
