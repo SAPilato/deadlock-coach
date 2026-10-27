@@ -139,6 +139,7 @@ def matches(
             "duration_s": m.get("match_duration_s"),
             "hero": hero_card(st.gd, m["hero_id"]),
             "won": m.get("match_result") == m.get("player_team"),
+            "team": m.get("player_team"),
             "kills": m.get("player_kills"),
             "deaths": m.get("player_deaths"),
             "assists": m.get("player_assists"),
@@ -171,7 +172,9 @@ def paths(
 ):
     acc = _account(s, account_id)
     ctx = _api_errors(lambda: load_context(st.gd, match_id, acc, s.bracket))
-    return build_paths(st.gd, ctx, step)
+    from app.macro.movement import measure
+
+    return build_paths(st.gd, ctx, step, start_reach=measure(st).get("start_reach"))
 
 
 # ---- replays ------------------------------------------------------------------------

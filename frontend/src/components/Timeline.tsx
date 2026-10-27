@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { CableCar, Skull } from "lucide-react";
 import { api, type Paths, type Report, type TimelineEvent } from "../lib/api";
 import { clock } from "../lib/format";
-import Minimap, { type Marker } from "./Minimap";
+import Minimap, { type LaneSection, type Marker } from "./Minimap";
 import SoulsChart from "./SoulsChart";
 import { useThemeColors } from "../lib/theme";
-import { Icon } from "./ui";
+import { EstTag, Icon } from "./ui";
 
 const ALLY = "#3987e5";
 const ENEMY = "#d95926";
@@ -71,6 +71,16 @@ export default function Timeline({
   const me = paths.data?.players.find((p) => p.is_me);
   const laneOf = new Map((paths.data?.lanes ?? []).map((l) => [l.id, l]));
   const myZipSeconds = me ? me.zip.reduce((sum, [a, b]) => sum + (b - a), 0) : 0;
+  const control = paths.data && me ? zipControl(paths.data, me.team, t) : [];
+  // Each side's part of every zipline, painted from its own base (lanes run from team 0's base).
+  const sections: LaneSection[] = control.flatMap((c) => {
+    const [r0, r1] = me!.team === 0 ? [c.mine, c.theirs] : [c.theirs, c.mine];
+    const [c0, c1] = me!.team === 0 ? [ALLY, ENEMY] : [ENEMY, ALLY];
+    return [
+      { laneId: c.lane.id, from: 0, to: r0, color: c0 },
+      { laneId: c.lane.id, from: 1 - r1, to: 1, color: c1 },
+    ];
+  });
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,420px)]">
@@ -197,7 +207,8 @@ export default function Timeline({
           <span><Icon icon={CableCar} /> On a zipline</span>
           <span>Faded ✕: dead</span>
         </div>
-        <Minimap map={report.map} markers={markers} caption={`Positions at ${clock(t)}. Hover a hero for their name.`} />
+        <Minimap map={report.map} markers={markers} sections={sections} caption={`Positions at ${clock(t)}. Hover a hero for their name.`} />
+        {control.length > 0 && <ZipControl control={control} t={t} />}
         {paths.data && <LiveList live={live} t={t} />}
       </div>
     </div>
@@ -263,6 +274,66 @@ function LiveList({ live, t }: { live: Live[]; t: number }) {
           </ul>
         ))}
       </div>
+    </div>
+  );
+}
+
+interface Control {
+  lane: Paths["lanes"][number];
+  mine: number; // share of the lane's zipline your team owns, from your base
+  theirs: number;
+}
+
+/** Each lane's zipline split at second t, from the reach timeline. */
+function zipControl(paths: Paths, myTeam: number, t: number): Control[] {
+  return paths.lanes.flatMap((lane) => {
+    const rows = paths.reach[String(lane.id)];
+    if (!rows?.length) return [];
+    let cur = rows[0];
+    for (const r of rows) {
+      if (r[0] > t) break;
+      cur = r;
+    }
+    const [r0, r1] = [cur[1], cur[2]];
+    return [{ lane, mine: myTeam === 0 ? r0 : r1, theirs: myTeam === 0 ? r1 : r0 }];
+  });
+}
+
+function ZipControl({ control, t }: { control: Control[]; t: number }) {
+  return (
+    <div className="mt-4 space-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <h4 className="label">
+          <Icon icon={CableCar} /> Zipline control at {clock(t)}
+        </h4>
+        <span className="text-sm text-dim">
+          You ride only your part.
+          <EstTag title="From riders: a team owns at least as far as one of its players rode." />
+        </span>
+      </div>
+      <ul className="space-y-1">
+        {control.map(({ lane, mine, theirs }) => (
+          <li key={lane.id} className="grid grid-cols-[5.5rem_1fr] items-center gap-2">
+            <span className="text-sm font-bold">
+              <span style={{ color: lane.color }}>━</span> {lane.name}
+            </span>
+            <div
+              className="flex h-6 overflow-hidden rounded-md border border-line bg-panel2 text-xs font-bold tnum"
+              role="img"
+              aria-label={`${lane.name}: your team ${Math.round(mine * 100)}%, enemy ${Math.round(theirs * 100)}%`}
+            >
+              <span className="grid place-items-center text-[#0e1014]" style={{ width: `${mine * 100}%`, background: ALLY }}>
+                {Math.round(mine * 100)}%
+              </span>
+              <span className="flex-1" />
+              <span className="grid place-items-center text-[#0e1014]" style={{ width: `${theirs * 100}%`, background: ENEMY }}>
+                {Math.round(theirs * 100)}%
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted">Your base on the left. The gap: no rider seen there yet.</p>
     </div>
   );
 }

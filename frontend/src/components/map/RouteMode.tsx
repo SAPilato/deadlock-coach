@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { num } from "../../lib/format";
 import type { Pt } from "../../lib/geo";
-import { buildGraph, compare, quickVerdict, towards, type Lane, type Leg, type Speeds } from "../../lib/route";
+import { buildGraph, compare, laneLength, ownedSection, quickVerdict, subpath, towards, type Lane, type Leg, type Speeds, type Team } from "../../lib/route";
 import { ErrorBox, EstTag, Loading } from "../ui";
-import MapCanvas, { Lanes, S, SURFACE } from "./MapCanvas";
+import MapCanvas, { Lanes, S, SURFACE, TEAM_COLORS } from "./MapCanvas";
 
 // Three outcomes, validated category slots (not team colours; blue failed CVD next to violet).
 const ZIP = "#199e70";
@@ -41,12 +41,21 @@ export default function RouteMode() {
   const [b, setB] = useState<Pt | null>(null);
   const [dest, setDest] = useState<Pt | null>(null);
   const [heroId, setHeroId] = useState<number | null>(null);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [reach, setReach] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (heroId == null && layers.data && !matches.isLoading) {
       setHeroId(matches.data?.matches.find((m) => !m.street_brawl)?.hero.id ?? layers.data.heroes[0]?.id ?? null);
     }
   }, [heroId, layers.data, matches.isLoading, matches.data]);
+  // Start on the side you played last; switch any time.
+  useEffect(() => {
+    if (team == null && !matches.isLoading) {
+      const last = matches.data?.matches.find((m) => !m.street_brawl)?.team;
+      setTeam(last === 1 ? 1 : 0);
+    }
+  }, [team, matches.isLoading, matches.data]);
 
   const d = layers.data;
   const m = mv.data;
@@ -63,8 +72,15 @@ export default function RouteMode() {
         }
       : null;
 
-  // Every zipline and where you can switch between them; rebuilt only when the map changes.
-  const graph = useMemo(() => (d ? buildGraph(lanes, d.transform) : null), [d, lanes]);
+  // Your team's part of each zipline: from your base out to its reach (start reach measured).
+  const start = m?.start_reach ?? 0.5;
+  const side: Team = team ?? 0;
+  const owned = useMemo(
+    () => new Map(lanes.map((l) => [l.id, ownedSection(side, reach[l.id] ?? start)] as [number, [number, number]])),
+    [lanes, side, reach, start],
+  );
+  // Every zipline stretch you can ride and where you can switch; rebuilt when ownership changes.
+  const graph = useMemo(() => (d ? buildGraph(lanes, d.transform, owned, side) : null), [d, lanes, owned, side]);
   const verdict = useMemo(
     () => (d && graph && speeds && a && b ? compare(a, b, graph, d.transform, speeds) : null),
     [a, b, d, graph, speeds],
@@ -115,6 +131,28 @@ export default function RouteMode() {
           />
         ))}
         <Lanes lanes={lanes} width={6} />
+        {/* Grey out what you cannot ride (enemy or neutral); a team dot marks where yours ends. */}
+        {lanes.map((l) => {
+          const [f0, f1] = owned.get(l.id) ?? [0, 0];
+          const L = laneLength(l, d.transform);
+          const [g0, g1] = side === 0 ? [f1, 1] : [0, f0];
+          const end = subpath(l.pts, (side === 0 ? f1 : f0) * L, (side === 0 ? f1 : f0) * L, d.transform)[0];
+          return (
+            <g key={`own${l.id}`}>
+              {g1 > g0 && (
+                <polyline
+                  points={line(subpath(l.pts, g0 * L, g1 * L, d.transform))}
+                  fill="none"
+                  stroke={SURFACE}
+                  strokeWidth={8}
+                  strokeOpacity={0.85}
+                  strokeDasharray="10 8"
+                />
+              )}
+              {end && f1 > f0 && <circle cx={end[0] * S} cy={end[1] * S} r={10} fill={TEAM_COLORS[side]} stroke={INK} strokeWidth={3} />}
+            </g>
+          );
+        })}
         {mode === "pair" && verdict && a && b && (
           <g>
             <line x1={a[0] * S} y1={a[1] * S} x2={b[0] * S} y2={b[1] * S} stroke={FOOT} strokeWidth={6} strokeDasharray="14 10" />
@@ -164,6 +202,55 @@ export default function RouteMode() {
               {label}
             </button>
           ))}
+        </div>
+
+        <div className="space-y-2">
+          <div className="label">Your team</div>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Your team">
+            {([0, 1] as Team[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="radio"
+                aria-checked={side === t}
+                onClick={() => setTeam(t)}
+                className={`rounded-xl border-2 px-4 py-2 font-bold ${side === t ? "bg-panel2" : "border-line text-dim"}`}
+                style={side === t ? { borderColor: TEAM_COLORS[t] } : undefined}
+              >
+                <span style={{ color: TEAM_COLORS[t] }}>■</span> {d.teams[String(t)] ?? `Team ${t}`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="label">Your zipline reaches</span>
+            <span className="text-sm text-dim">share of each lane, from your base. Dashed: not yours.</span>
+            <button type="button" className="chip ml-auto hover:border-accent" onClick={() => setReach({})}>
+              Start of game
+            </button>
+          </div>
+          {lanes.map((l) => {
+            const r = reach[l.id] ?? start;
+            return (
+              <label key={l.id} className="grid grid-cols-[6rem_1fr_3.5rem] items-center gap-3">
+                <span className="font-bold">
+                  <span style={{ color: l.color }}>━</span> {l.name}
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.round(r * 100)}
+                  onChange={(e) => setReach((x) => ({ ...x, [l.id]: Number(e.target.value) / 100 }))}
+                  className="w-full accent-accent"
+                  aria-label={`${l.name} zipline reach`}
+                />
+                <span className="tnum text-right">{Math.round(r * 100)}%</span>
+              </label>
+            );
+          })}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -237,7 +324,7 @@ export default function RouteMode() {
                         {k > 0 && <span className="text-muted" aria-hidden>→</span>}
                         <span className={`chip ${leg.kind === "ride" ? "font-bold" : ""}`}>
                           {leg.kind === "ride"
-                            ? `${rideLegs.indexOf(leg) + 1}. Ride ${leg.lane.name} ${num(leg.seconds)} s`
+                            ? `${rideLegs.indexOf(leg) + 1}. Ride ${leg.lane.name} ${leg.toward === "enemy" ? "toward the enemy" : leg.toward === "home" ? "toward your base" : ""} ${num(leg.seconds)} s`
                             : `Walk ${num(leg.seconds)} s`}
                         </span>
                       </li>
@@ -285,7 +372,11 @@ export default function RouteMode() {
             normal {num(m.foot_speed)} u/s.
           </li>
           <li>Real paths bend: walking counts ×{num(speeds.detour, 2)} the straight line.</li>
-          <li>Ziplines ride both ways (game setting). Zipline boost and blocked lanes are not modelled.</li>
+          <li>
+            You ride only your team's part of each zipline, both ways at the same speed. At the start each team owns{" "}
+            {Math.round(start * 100)}% of every lane (measured). Push a lane to extend yours.
+          </li>
+          <li>Zipline boost and blocked lanes are not modelled.</li>
           {m.switches.count > 0 && (
             <li>
               Players switch ziplines often: {num(m.switches.count)} switches seen, about {num(m.switches.gap_s ?? 0)} s apart.

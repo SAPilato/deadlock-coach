@@ -9,7 +9,9 @@ From cached matches we measure, in game units per second:
 - detour: path length / straight-line distance over 20 s trips (streets bend);
   the median is ordinary travel, the lower quartile is the most direct routes;
 - walkable cells: grid cells players actually stood in;
-- zipline switches: one lane's zipline to another's within TRANSFER_GAP_S.
+- zipline switches: one lane's zipline to another's within TRANSFER_GAP_S;
+- start reach: how far along a lane, from your own base, anyone rides in the
+  first START_S seconds, when each team owns its starting part (analysis/zipline.py).
 Ziplines can be ridden both ways (convar citadel_zipline_allow_direction_choice).
 """
 from __future__ import annotations
@@ -19,6 +21,7 @@ import math
 import statistics
 
 from app.analysis.paths import decode_paths, zipline_rides
+from app.analysis.zipline import MAX_LANE_DIST, lane_u
 from app.state import AppState
 
 GRID = 40
@@ -29,6 +32,7 @@ MAX_MATCHES = 15
 MAX_STEP_UNITS = 2500  # bigger 1 s jumps are teleports or respawns
 ATTACH_S = 1.0  # est. time to latch on and drop off a zipline
 TRANSFER_GAP_S = 8  # off one zipline and on another within this counts as a switch
+START_S = 120  # the opening: no lane has been pushed yet
 
 _memo: dict[int, dict] = {}
 
@@ -55,12 +59,14 @@ def measure(st: AppState) -> dict:
     detours: list[float] = []
     walkable: set[tuple[int, int]] = set()
     switch_gaps: list[int] = []
+    start_us: list[float] = []
     matches = 0
     for r in rows:
         info = json.loads(r["payload"]).get("match_info", {})
         if info.get("game_mode") != 1:
             continue
         matches += 1
+        team_of = {p["player_slot"]: p["team"] for p in info.get("players", [])}
         for tr in decode_paths(info.get("match_paths")).values():
             n = len(tr.x)
             if not tr.move or not tr.combat or not tr.health:
@@ -70,6 +76,11 @@ def measure(st: AppState) -> dict:
                 left, top = geo.to_rel(tr.x[i], tr.y[i])
                 if 0 <= left < 1 and 0 <= top < 1 and tr.health[i] > 0:
                     walkable.add((int(left * GRID), int(top * GRID)))
+            for t in range(min(START_S, n)):
+                if tr.move[t] == zip_id and tr.slot in team_of:
+                    lane = min(geo.lanes.values(), key=lambda ln: ln.dist(tr.x[t], tr.y[t]))
+                    if lane.dist(tr.x[t], tr.y[t]) <= MAX_LANE_DIST:
+                        start_us.append(lane_u(lane, team_of[tr.slot], tr.x[t], tr.y[t]))
             rides = zipline_rides(tr, zip_id, geo.lanes.values())
             for r0, r1 in zip(rides, rides[1:]):
                 if r0.lane_id != r1.lane_id and r1.start - r0.end <= TRANSFER_GAP_S:
@@ -105,6 +116,8 @@ def measure(st: AppState) -> dict:
         "samples": {"zip_s": len(zip_speeds), "foot_windows": len(moving), "trips": len(detours)},
         "attach_s": ATTACH_S,
         "switches": {"count": len(switch_gaps), "gap_s": statistics.median(switch_gaps) if switch_gaps else None},
+        # How far each team's zipline reaches at the start, from its own base (share of the lane).
+        "start_reach": _pct(start_us, 0.99),
         "avg_hero_move": sum(heroes) / len(heroes) if heroes else None,
         "grid": GRID,
         "walkable": sorted([i, j] for i, j in walkable),

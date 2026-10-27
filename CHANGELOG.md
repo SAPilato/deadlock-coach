@@ -4,6 +4,17 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (team zipline ownership)
+- Route planner: pick Hidden King or Archmother and each lane's zipline reach (starts
+  at the measured start reach, ~43%). Only your team's part can be ridden; the rest is
+  dashed, a team dot marks where yours ends, and each ride says "toward the enemy" or
+  "toward your base".
+- Match review: zipline control per lane at the scrubbed second (your share vs the
+  enemy's), painted on the minimap lanes from each base.
+- Evidence (60 matches): nobody rides past the enemy's front objective; parts never
+  overlap (sum of reaches median 0.84); same speed both ways; reach grows with pushes.
+- Match list rows include your team.
+
 ### Added (routes, live review, build helper)
 - Route planner chains ziplines: a graph of every zipline (ridden either way) with
   walk-and-latch switches between them. Shows each step, numbers each ride, and colours

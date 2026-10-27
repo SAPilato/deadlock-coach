@@ -20,16 +20,51 @@ export interface Marker {
 
 const SURFACE = "#171a21";
 
+/** A stretch of a lane to paint, as fractions along it (lanes run from team 0's base). */
+export interface LaneSection {
+  laneId: number;
+  from: number;
+  to: number;
+  color: string;
+}
+
+/** The part of a polyline between two fractions of its length. */
+function slice(pts: [number, number][], f0: number, f1: number): [number, number][] {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+  const total = seg.reduce((a, b) => a + b, 0);
+  const at = (f: number): [number, number] => {
+    let d = f * total;
+    for (let i = 0; i < seg.length; i++) {
+      if (d <= seg[i] || i === seg.length - 1) {
+        const t = seg[i] ? Math.min(1, d / seg[i]) : 0;
+        return [pts[i][0] + t * (pts[i + 1][0] - pts[i][0]), pts[i][1] + t * (pts[i + 1][1] - pts[i][1])];
+      }
+      d -= seg[i];
+    }
+    return pts[pts.length - 1];
+  };
+  const out: [number, number][] = [at(f0)];
+  let along = 0;
+  for (let i = 0; i < seg.length; i++) {
+    along += seg[i];
+    if (along / total > f0 && along / total < f1) out.push(pts[i + 1]);
+  }
+  out.push(at(f1));
+  return out;
+}
+
 export default function Minimap({
   map,
   markers,
   maxWidth = 560,
   caption,
+  sections = [],
 }: {
   map: MapLayer;
   markers: Marker[];
   maxWidth?: number;
   caption?: string;
+  sections?: LaneSection[];
 }) {
   const [hover, setHover] = useState<Marker | null>(null);
   const uid = useId().replace(/:/g, "");
@@ -68,6 +103,22 @@ export default function Minimap({
                   {lane.name}
                 </text>
               </g>
+            );
+          })}
+          {sections.map((sec) => {
+            const lane = map.lanes.find((l) => l.id === sec.laneId);
+            if (!lane || sec.to <= sec.from) return null;
+            return (
+              <polyline
+                key={`sec${sec.laneId}${sec.from}`}
+                points={slice(lane.pts, sec.from, sec.to).map(([l, t]) => `${l * S},${t * S}`).join(" ")}
+                fill="none"
+                stroke={sec.color}
+                strokeWidth={14}
+                strokeOpacity={0.7}
+                strokeLinecap="round"
+                aria-hidden
+              />
             );
           })}
           {markers.map((m) => {

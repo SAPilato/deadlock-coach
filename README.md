@@ -29,6 +29,7 @@ Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offlin
 - **Replays (optional)**: auto-download or upload a `.dem` to add the urn check.
 - **Live review**: the minimap shows every hero's portrait. Scrub the timeline to see
   who is on a zipline (and which lane) or dead at that second. Your rides show as bars.
+  Zipline control shows how much of each lane's zipline each team owns at that second.
 - **Trends**: each habit over your last 20 games: improving, same or worse.
 
 Game phases come from objectives, not a clock:
@@ -85,12 +86,25 @@ Build Lab limits:
 - **Routes:** is optimal movement or the zipline faster? Pick A and B, or pick a
   destination and see which option wins from every spot. Routes can chain several
   ziplines (ride, switch, ride). Speeds and zipline switches are measured from real matches.
+  Pick your team (Hidden King or Archmother) and how far your zipline reaches in each
+  lane: you ride only your team's part, and each ride says toward the enemy or your base.
 - **Waves:** real trooper waves from a replay, with play/pause, and where each
   lane's waves met every minute. A sample replay is bundled.
 - **Your heatmap:** where you spent time in laning, mid and late game over your
   last 10 matches, with the objectives that fell.
 - **What would you do?:** real moments from your games. Pick an action, then see
   what you did and what happened next.
+
+Zipline ownership (from game settings and 60 real matches):
+- Ziplines are made of nodes that teams capture. You ride only your team's part, both
+  ways, at the same speed (879 vs 876 units/s).
+- At the start each team owns ~43% of every lane from its own base (measured each time
+  from the first 2 minutes of cached matches). Nobody rides past the enemy's front
+  objective, and the two teams' parts do not overlap.
+- Your part grows as you push: the furthest 1% of rides reach 46% with no Guardian
+  down, 58% after the enemy Guardian, 72% after their Walker, 78% after Base Guardians.
+- In match review, ownership comes from riders: a team owns at least as far as one of
+  its players rode, and the enemy owns no more than the rest. `est.`
 
 Macro Map notes:
 - The asset map data is partly stale (old urn spawns, icon-offset objectives). The

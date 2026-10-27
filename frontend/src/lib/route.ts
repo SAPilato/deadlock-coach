@@ -67,6 +67,19 @@ export function footSeconds(a: Pt, b: Pt, tf: Transform, sp: Speeds): number {
   return (worldUnits(a, b, tf) * sp.detour) / sp.foot;
 }
 
+// ---- Whose zipline ---------------------------------------------------------------
+// Each team owns part of every lane's zipline, from its own base out to its "reach"
+// (a share of the lane; measured start reach in /api/macro/movement). You ride only your
+// part, both ways, at the same speed. Lanes run from team 0's base to team 1's.
+
+export type Team = 0 | 1;
+
+/** The stretch of a lane (fractions from team 0's end) that `team` owns at `reach`. */
+export function ownedSection(team: Team, reach: number): [number, number] {
+  const r = Math.max(0, Math.min(1, reach));
+  return team === 0 ? [0, r] : [1 - r, 1];
+}
+
 // ---- Routes over several ziplines ------------------------------------------------
 // Players switch ziplines all the time (mostly in the base areas, ~2 s between rides;
 // measured in /api/macro/movement). So the planner searches a graph: nodes every
@@ -92,6 +105,7 @@ export interface ZipGraph {
   lanes: Lane[];
   nodes: GraphNode[];
   adj: Edge[][];
+  team: Team | null; // whose ziplines, for ride direction; null = no team chosen
 }
 
 function pointAt(pts: Pt[], s: number, tf: Transform): Pt {
@@ -107,20 +121,33 @@ function pointAt(pts: Pt[], s: number, tf: Transform): Pt {
   return pts[0];
 }
 
-export function buildGraph(lanes: Lane[], tf: Transform): ZipGraph {
+export function laneLength(lane: Lane, tf: Transform): number {
+  let total = 0;
+  for (let i = 1; i < lane.pts.length; i++) total += worldUnits(lane.pts[i - 1], lane.pts[i], tf);
+  return total;
+}
+
+/**
+ * Graph of ridable zipline. With `owned` (lane id -> [from, to] as fractions from team 0's
+ * end), only that stretch of each lane can be ridden; lanes missing from it cannot.
+ */
+export function buildGraph(lanes: Lane[], tf: Transform, owned?: Map<number, [number, number]>, team: Team | null = null): ZipGraph {
   const nodes: GraphNode[] = [];
   const adj: Edge[][] = [];
   lanes.forEach((lane, li) => {
-    let total = 0;
-    for (let i = 1; i < lane.pts.length; i++) total += worldUnits(lane.pts[i - 1], lane.pts[i], tf);
-    const n = Math.max(1, Math.ceil(total / NODE_STEP));
+    const total = laneLength(lane, tf);
+    const [f0, f1] = owned ? (owned.get(lane.id) ?? [0, 0]) : [0, 1];
+    const s0 = f0 * total;
+    const span = (f1 - f0) * total;
+    if (span < 1) return;
+    const n = Math.max(1, Math.ceil(span / NODE_STEP));
     for (let k = 0; k <= n; k++) {
-      const s = (total * k) / n;
+      const s = s0 + (span * k) / n;
       const idx = nodes.push({ lane: li, s, p: pointAt(lane.pts, s, tf) }) - 1;
       adj.push([]);
       if (k > 0) {
-        adj[idx - 1].push({ to: idx, d: total / n, ride: true });
-        adj[idx].push({ to: idx - 1, d: total / n, ride: true });
+        adj[idx - 1].push({ to: idx, d: span / n, ride: true });
+        adj[idx].push({ to: idx - 1, d: span / n, ride: true });
       }
     }
   });
@@ -134,7 +161,7 @@ export function buildGraph(lanes: Lane[], tf: Transform): ZipGraph {
       }
     }
   }
-  return { lanes, nodes, adj };
+  return { lanes, nodes, adj, team };
 }
 
 /** Seconds from every graph node (riding) to `b`, with the next hop. Edges run both ways. */
@@ -179,7 +206,7 @@ export function towards(b: Pt, g: ZipGraph, tf: Transform, sp: Speeds): Field {
 
 export type Leg =
   | { kind: "walk"; from: Pt; to: Pt; seconds: number }
-  | { kind: "ride"; lane: Lane; path: Pt[]; seconds: number };
+  | { kind: "ride"; lane: Lane; path: Pt[]; seconds: number; toward: "enemy" | "home" | null };
 
 export interface ZipRoute {
   legs: Leg[];
@@ -215,7 +242,10 @@ export function zipRoute(a: Pt, b: Pt, g: ZipGraph, tf: Transform, sp: Speeds, f
       const n1 = g.nodes[i];
       const lane = g.lanes[n0.lane];
       if (rideFrom !== i) {
-        legs.push({ kind: "ride", lane, path: subpath(lane.pts, n0.s, n1.s, tf), seconds: Math.abs(n1.s - n0.s) / sp.zip });
+        // Lanes run from team 0's base: riding up the lane heads for team 1's base.
+        const up = n1.s > n0.s;
+        const toward = g.team == null ? null : up === (g.team === 0) ? "enemy" : "home";
+        legs.push({ kind: "ride", lane, path: subpath(lane.pts, n0.s, n1.s, tf), seconds: Math.abs(n1.s - n0.s) / sp.zip, toward });
         rides.push(lane);
       }
       if (j < 0) break;

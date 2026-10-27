@@ -45,6 +45,7 @@ export interface MatchRow {
   rank: RankInfo | null;
   mode: string;
   street_brawl: boolean;
+  team: number | null; // 0 Hidden King, 1 Archmother
 }
 
 export interface Evidence {
@@ -187,6 +188,9 @@ export interface Paths {
     zip: [number, number, number][]; // [start s, end s, lane id] per zipline ride
   })[];
   lanes: { id: number; name: string; color: string }[];
+  /** Per lane id: [t, team 0 share, team 1 share] of the zipline at each change (est.). */
+  reach: Record<string, [number, number, number][]>;
+  start_reach: number | null;
 }
 
 export type TrendStatus = "improving" | "same" | "worse" | "not_enough";
@@ -392,6 +396,7 @@ export interface Movement {
   samples: { zip_s: number; foot_windows: number; trips: number };
   attach_s: number;
   switches: { count: number; gap_s: number | null }; // one zipline to another, measured
+  start_reach: number | null; // share of each lane's zipline a team owns at the start, measured
   avg_hero_move: number;
   grid: number;
   walkable: [number, number][];

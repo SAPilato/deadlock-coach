@@ -53,6 +53,11 @@ def test_paths_for_scrubber(api, seed_info):
     rides = [r for q in p["players"] for r in q["zip"]]
     assert all(q["zip"] for q in p["players"])
     assert all(0 <= start < end <= p["duration_s"] + 1 and lane in lane_ids for start, end, lane in rides)
+    # Each team's share of every lane's zipline over time: starts equal, never overlaps.
+    assert {int(k) for k in p["reach"]} == lane_ids and 0.3 < p["start_reach"] < 0.6
+    for rows in p["reach"].values():
+        assert rows[0] == [0, round(p["start_reach"], 3), round(p["start_reach"], 3)]
+        assert all(0 <= r0 <= 1 and 0 <= r1 <= 1 and r0 + r1 <= 1.0 for _, r0, r1 in rows)
 
 
 def test_trends_and_focus(api):

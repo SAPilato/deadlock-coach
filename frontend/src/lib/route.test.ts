@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGraph, compare, project, quickVerdict, subpath, towards, zipRoute, type Lane, type Speeds } from "./route";
+import { buildGraph, compare, ownedSection, project, quickVerdict, subpath, towards, zipRoute, type Lane, type Speeds } from "./route";
 import type { Transform } from "./geo";
 
 // 1 relative unit = 10,000 world units on both axes (y flipped like the real map).
@@ -80,5 +80,40 @@ describe("several ziplines", () => {
     expect(q.faster).toBe(v.faster);
     expect(q.rides).toBe(2);
     expect(q.saving).toBeCloseTo(v.saving, 6);
+  });
+});
+
+describe("team-owned ziplines", () => {
+  // The test lane runs left (team 0's base) to right (team 1's base), 10,000 units long.
+  const from: [number, number] = [0.05, 0.5];
+  const to: [number, number] = [0.95, 0.5];
+
+  it("each team owns its stretch from its own base", () => {
+    expect(ownedSection(0, 0.43)).toEqual([0, 0.43]);
+    expect(ownedSection(1, 0.43)[0]).toBeCloseTo(0.57, 9);
+    expect(ownedSection(1, 2)).toEqual([0, 1]);
+  });
+
+  it("only rides your own stretch, and says which way", () => {
+    const g0 = buildGraph([lane], tf, new Map([[1, ownedSection(0, 0.5)]]), 0);
+    const r0 = zipRoute(from, to, g0, tf, sp)!;
+    const ride0 = r0.legs.find((l) => l.kind === "ride")!;
+    expect(ride0.kind === "ride" && ride0.toward).toBe("enemy");
+    expect(ride0.seconds).toBeLessThanOrEqual(5000 / sp.zip + 1e-9); // at most half the lane
+    const g1 = buildGraph([lane], tf, new Map([[1, ownedSection(1, 0.5)]]), 1);
+    const ride1 = zipRoute(from, to, g1, tf, sp)!.legs.find((l) => l.kind === "ride")!;
+    expect(ride1.kind === "ride" && ride1.toward).toBe("home");
+  });
+
+  it("a longer zipline is faster", () => {
+    const short = zipRoute(from, to, buildGraph([lane], tf, new Map([[1, ownedSection(0, 0.3)]]), 0), tf, sp)!;
+    const long = zipRoute(from, to, buildGraph([lane], tf, new Map([[1, ownedSection(0, 0.9)]]), 0), tf, sp)!;
+    expect(long.total).toBeLessThan(short.total);
+  });
+
+  it("a lane you own none of cannot be ridden", () => {
+    const g = buildGraph([lane], tf, new Map(), 0);
+    expect(g.nodes).toHaveLength(0);
+    expect(compare(from, to, g, tf, sp).faster).toBe("foot");
   });
 });

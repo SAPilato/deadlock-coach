@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.analysis.model import MatchContext
 from app.analysis.paths import zipline_rides
+from app.analysis.zipline import zipline_reach
 from app.findings.engine import Report
 from app.findings.rules.items_late import core_items
 from app.gamedata.service import GameData
@@ -229,11 +230,13 @@ def _lane(gd: GameData, ctx: MatchContext) -> dict:
     }
 
 
-def build_paths(gd: GameData, ctx: MatchContext, step: int = 5) -> dict:
+def build_paths(gd: GameData, ctx: MatchContext, step: int = 5, start_reach: float | None = None) -> dict:
     """Minimap positions for every player every `step` seconds, for the timeline scrubber.
 
     `zip` lists each zipline ride to the second ([start, end, lane id]) from the match's
     movement types, so the review can show who is riding at any moment.
+    `reach` gives each team's share of every lane's zipline over time (analysis/zipline.py),
+    as [t, team 0 reach, team 1 reach] at each change.
     """
     zip_id = ctx.enum_value("EMoveType", "Ziplining")
     players = []
@@ -256,4 +259,8 @@ def build_paths(gd: GameData, ctx: MatchContext, step: int = 5) -> dict:
             ],
         })
     lanes = [{"id": ln.id, "name": ln.name, "color": ln.color} for ln in ctx.geo.lanes.values()]
-    return {"step": step, "duration_s": ctx.duration_s, "players": players, "lanes": lanes}
+    reach = zipline_reach(ctx, start_reach) if start_reach is not None else {}
+    return {
+        "step": step, "duration_s": ctx.duration_s, "players": players, "lanes": lanes,
+        "reach": {str(k): v for k, v in reach.items()}, "start_reach": start_reach,
+    }

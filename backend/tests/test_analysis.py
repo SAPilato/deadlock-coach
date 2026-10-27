@@ -4,6 +4,7 @@ import statistics
 from app.analysis.loader import geometry
 from app.analysis.model import ObjectiveEvent
 from app.analysis.paths import Track, zipline_rides
+from app.analysis.zipline import reach_from_samples
 from app.report import phase_bounds, phase_of
 from tests import factories as f
 
@@ -115,3 +116,16 @@ def test_zipline_rides_split_by_lane():
     rides = zipline_rides(tr, zip_id, [_Lane(1, 0), _Lane(4, 1000)])
     assert [(r.start, r.end, r.lane_id) for r in rides] == [(1, 4, 1), (6, 8, 4), (9, 10, 1)]
     assert zipline_rides(tr, None, [_Lane(1, 0)]) == []
+
+
+def test_zipline_reach_grows_with_riders_and_never_overlaps():
+    samples = {
+        30: [(1, 0, 0.40)],  # inside the start reach: no change
+        60: [(1, 0, 0.55)],  # team 0 rides past the middle: it owns 55%, team 1 at most 45%
+        90: [(1, 1, 0.70)],  # team 1 pushes back: it owns 70%, team 0 at most 30%
+        95: [(1, 1, 0.705)],  # under 1% more: not recorded
+    }
+    out = reach_from_samples(samples, [1, 4], start=0.43)
+    assert out[1] == [[0, 0.43, 0.43], [60, 0.55, 0.43], [90, 0.3, 0.7]]
+    assert out[4] == [[0, 0.43, 0.43]]
+    assert all(r0 + r1 <= 1.0 for _, r0, r1 in out[1])
