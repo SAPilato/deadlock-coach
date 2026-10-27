@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type SteamHit } from "../lib/api";
 import { ErrorBox, Icon, Loading, Section } from "../components/ui";
-import { Check, Eye, Palette, RotateCw, Search, Settings as SettingsIcon, TriangleAlert } from "lucide-react";
+import { Check, Eye, Globe, LogOut, Palette, RotateCw, Search, Settings as SettingsIcon, TriangleAlert } from "lucide-react";
 import ThemePicker from "../components/ThemePicker";
 
 const SUBRANKS = [1, 2, 3, 4, 5, 6];
@@ -11,6 +11,7 @@ export default function Settings() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["settings"], queryFn: api.settings });
   const meta = useQuery({ queryKey: ["meta"], queryFn: api.meta });
+  const auth = useQuery({ queryKey: ["auth"], queryFn: api.authStatus, staleTime: Infinity });
   const [steam, setSteam] = useState("");
   const [search, setSearch] = useState("");
   const [hits, setHits] = useState<SteamHit[] | null>(null);
@@ -164,6 +165,34 @@ export default function Settings() {
           <Icon icon={RotateCw} /> {refresh.isPending ? "Refreshing…" : "Refresh game data"}
         </button>
         {refresh.error && <ErrorBox error={refresh.error} />}
+      </Section>
+
+      <Section id="sharing" icon={Globe} title="5. Open on your phone">
+        {auth.data?.required ? (
+          <>
+            <p className="text-dim">You are using the shared link. It needs your app password.</p>
+            <button
+              type="button"
+              className="btn"
+              onClick={async () => {
+                await api.logout();
+                qc.invalidateQueries({ queryKey: ["auth"] });
+              }}
+            >
+              <Icon icon={LogOut} /> Log out on this device
+            </button>
+          </>
+        ) : (
+          <ol className="list-decimal space-y-1 pl-6 text-lg">
+            <li>
+              On this PC, run <code className="chip">npm run set-password</code> once.
+            </li>
+            <li>
+              Run <code className="chip">npm run share</code> and keep it open.
+            </li>
+            <li>Open the link it prints on your phone, then log in.</li>
+          </ol>
+        )}
       </Section>
     </div>
   );

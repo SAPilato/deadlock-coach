@@ -7,6 +7,8 @@
     "dev": "node scripts/dev.mjs",
     "dev:api": "node scripts/py.mjs -m uvicorn app.main:app --port 8000 --app-dir backend",
     "dev:web": "npm --prefix frontend run dev",
+    "share": "node scripts/share.mjs",
+    "set-password": "node scripts/py.mjs -m app.set_password --app-dir backend",
     "test": "npm run test:api && npm run test:web",
     "test:api": "node scripts/py.mjs -m pytest backend/tests -q",
     "test:web": "npm --prefix frontend run test",

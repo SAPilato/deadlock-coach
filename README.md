@@ -20,6 +20,37 @@ Add yours in **Settings** (SteamID64, profile link, `[U:1:…]`, or search by na
 
 Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offline sample).
 
+## Open it on your phone
+
+A free public link to the app on your PC, through a Cloudflare quick tunnel, with a
+password in front.
+
+1. Once: install the tunnel tool.
+
+   ```bash
+   winget install --id Cloudflare.cloudflared
+   ```
+
+2. Once: set the app password. You type it on this PC; only a hash is stored.
+
+   ```bash
+   npm run set-password
+   ```
+
+3. Each time: start sharing, then open the `https://….trycloudflare.com` link it prints.
+
+   ```bash
+   npm run share
+   ```
+
+Notes:
+- The link changes every run and works only while `npm run share` runs on your PC.
+- The app itself listens on this PC only (127.0.0.1:8787); the tunnel is the one way in.
+- Every API call needs the login. You stay logged in for 30 days. 10 wrong passwords lock
+  logins for 10 minutes. A new password logs every device out.
+- Quick tunnels are free but have no uptime promise and a new address each time. For a
+  fixed address, use a named Cloudflare tunnel (needs a domain) or Tailscale Funnel.
+
 ## What it does (Phase 1)
 
 - **Home**: one focus habit for your next game.

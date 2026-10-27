@@ -4,6 +4,14 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (open it on your phone)
+- `npm run share`: builds the site, runs the app on this PC only with a login, and opens a
+  free Cloudflare quick tunnel, printing the public https link.
+- `npm run set-password`: set the app password on this PC (scrypt hash; never sent).
+- Login screen before anything loads when shared; log out in Settings. Signed 30-day
+  cookie (HttpOnly, SameSite=Lax, Secure over https); 10 wrong tries lock logins for 10
+  min; API docs are off when shared.
+
 ### Changed (movement rechecked on real route times)
 - Route planner times now come from real trips: optimal = straight-line progress of the
   fastest 15% of out-of-combat trips covering 5,000+ units in 30 s; normal = the median.

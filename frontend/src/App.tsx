@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
+import LoginGate from "./components/LoginGate";
 import Home from "./pages/Home";
 import Matches from "./pages/Matches";
 import MatchReport from "./pages/MatchReport";
@@ -12,7 +13,8 @@ import LessonPage from "./pages/Lesson";
 
 export default function App() {
   return (
-    <Layout>
+    <LoginGate>
+      <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/matches" element={<Matches />} />
@@ -24,6 +26,7 @@ export default function App() {
         <Route path="/learn" element={<Learn />} />
         <Route path="/learn/:id" element={<LessonPage />} />
       </Routes>
-    </Layout>
+      </Layout>
+    </LoginGate>
   );
 }

@@ -545,6 +545,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Fired when the shared app answers "login required"; LoginGate shows the login again. */
+export const LOGIN_REQUIRED = "coach:login-required";
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     ...init,
@@ -558,6 +561,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* not JSON */
     }
+    if (res.status === 401 && msg === "login required") window.dispatchEvent(new Event(LOGIN_REQUIRED));
     throw new ApiError(msg, res.status);
   }
   return res.json() as Promise<T>;
@@ -604,6 +608,9 @@ export const api = {
   macroScenarios: () => request<ScenarioRow[]>("/macro/scenarios"),
   macroScenario: (matchId: number, t: number) => request<Scenario>(`/macro/scenario?match_id=${matchId}&t=${t}`),
   learn: () => request<Lesson[]>("/learn"),
+  authStatus: () => request<{ required: boolean; logged_in: boolean }>("/auth/status"),
+  login: (password: string) => request<{ logged_in: boolean }>("/auth/login", { method: "POST", body: JSON.stringify({ password }) }),
+  logout: () => request<{ logged_in: boolean }>("/auth/logout", { method: "POST" }),
   helperPhases: (heroId: number) => request<PhasePicks>(`/buildlab/helper/phases?hero_id=${heroId}`),
   helperSpikes: (b: Build) => request<Spikes>("/buildlab/helper/spikes", { method: "POST", body: JSON.stringify(b) }),
   helperCounters: (heroId: number, enemies: number[]) =>
