@@ -2,8 +2,10 @@
 
 It is a personal app, so there is one password for the whole app. Only a scrypt hash of
 it is stored (settings table); it is set on this PC with `npm run set-password`, never
-over the network. Logging in sets a signed cookie that lasts SESSION_DAYS. Setting a
-new password changes the signing secret, which logs every device out.
+over the network. On a cloud host, put the hash from `npm run password-hash` in the
+COACH_PASSWORD_HASH variable instead; it wins over the stored one. Logging in sets a
+signed cookie that lasts SESSION_DAYS. A new password (either way) logs every device out:
+the signing key includes the hash.
 
 Too many wrong passwords lock logins for a while (MAX_FAILS in FAIL_WINDOW_S locks for
 LOCK_S), counted for the whole app: behind a tunnel every request comes from this PC,
@@ -27,6 +29,7 @@ FAIL_WINDOW_S = 600
 LOCK_S = 600
 MIN_LENGTH = 8
 
+ENV_HASH = "COACH_PASSWORD_HASH"
 _HASH_KEY = "auth_password_hash"
 _SECRET_KEY = "auth_secret"
 _SCRYPT = {"n": 2**15, "r": 8, "p": 1, "maxmem": 64 * 1024 * 1024}
@@ -69,9 +72,12 @@ class Auth:
     def _set(self, key: str, value: str) -> None:
         self.db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
 
+    def _hash(self) -> str | None:
+        return os.environ.get(ENV_HASH) or self._get(_HASH_KEY)
+
     @property
     def has_password(self) -> bool:
-        return self._get(_HASH_KEY) is not None
+        return self._hash() is not None
 
     def set_password(self, password: str) -> None:
         if len(password) < MIN_LENGTH:
@@ -80,8 +86,12 @@ class Auth:
         self._set(_SECRET_KEY, secrets.token_hex(32))  # old cookies stop working
 
     def _sign(self, payload: str) -> str:
-        secret = self._get(_SECRET_KEY) or ""
-        return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        secret = self._get(_SECRET_KEY)
+        if secret is None:  # first start with only COACH_PASSWORD_HASH set
+            secret = secrets.token_hex(32)
+            self._set(_SECRET_KEY, secret)
+        key = f"{secret}:{self._hash()}"
+        return hmac.new(key.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
     def issue(self) -> str:
         expires = int(self.clock() + SESSION_DAYS * 86400)
@@ -103,7 +113,7 @@ class Auth:
             now = self.clock()
             if now < self._locked_until:
                 raise Locked(int(self._locked_until - now))
-            stored = self._get(_HASH_KEY)
+            stored = self._hash()
             if stored and verify_password(password, stored):
                 self._fails.clear()
                 return self.issue()

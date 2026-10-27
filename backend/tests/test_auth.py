@@ -96,3 +96,14 @@ def test_local_app_stays_open_and_shared_app_needs_a_password():
     with pytest.raises(RuntimeError, match="set-password"):
         with TestClient(_app(require_login=True, password=None)):
             pass
+
+
+def test_cloud_password_hash_from_environment(monkeypatch):
+    a = Auth(Database(":memory:"))
+    assert not a.has_password
+    monkeypatch.setenv(auth_mod.ENV_HASH, hash_password(PASSWORD))
+    assert a.has_password
+    token = a.login(PASSWORD)
+    assert a.valid(token) and a.login("wrong") is None
+    monkeypatch.setenv(auth_mod.ENV_HASH, hash_password("a brand new password"))
+    assert not a.valid(token)  # a new hash logs every device out
