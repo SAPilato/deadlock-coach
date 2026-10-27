@@ -113,7 +113,10 @@ To get a public link, install Cloudflare's tunnel tool once, then run \`npm run 
 `);
 } else {
   let shown = false;
-  start("tunnel", cloudflared, ["tunnel", "--no-autoupdate", "--url", `http://127.0.0.1:${PORT}`], {}, (line) => {
+  // HTTP/2 over TCP 443, not the default QUIC over UDP 7844: many school and work networks
+  // block that UDP port, and cloudflared then keeps retrying QUIC instead of falling back.
+  const args = ["tunnel", "--no-autoupdate", "--protocol", "http2", "--url", `http://127.0.0.1:${PORT}`];
+  start("tunnel", cloudflared, args, {}, (line) => {
     const url = line.match(/https:\/\/[-a-z0-9]+\.trycloudflare\.com/)?.[0];
     if (url && !shown) {
       shown = true;
