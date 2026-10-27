@@ -51,6 +51,32 @@ Notes:
 - Quick tunnels are free but have no uptime promise and a new address each time. For a
   fixed address, use a named Cloudflare tunnel (needs a domain) or Tailscale Funnel.
 
+## Host it in the cloud
+
+The repo has a `Dockerfile`, so any host that builds from GitHub with Docker works
+(Railway, Render, Fly.io, a VPS). Every push also runs the tests and a container build
+on GitHub (`.github/workflows/ci.yml`).
+
+What the host needs:
+- a **persistent volume mounted at `/data`** (cache, settings, parsed replays);
+- the variable **`COACH_PASSWORD_HASH`**: run `npm run password-hash` on your PC and paste
+  what it prints (the password itself is never shown). Login is always on in the container;
+- its HTTPS address pointed at the app's port (`PORT`, which most hosts set themselves).
+
+Example with Railway (deploys from GitHub, supports volumes):
+1. New project → Deploy from GitHub repo → pick this repo. It builds the `Dockerfile`.
+2. Add a volume to the service, mount path `/data`.
+3. Variables: add `COACH_PASSWORD_HASH`.
+4. Networking: generate a domain. Open it on your phone and log in.
+
+Notes:
+- The cloud copy starts empty: add your Steam ID in Settings there. Replays you parsed on
+  your PC stay on your PC; fetch them again in the cloud if you want them there.
+- Replay parsing downloads ~450 MB per match and needs a fair amount of memory. It is not
+  measured on small cloud instances yet; if parsing fails there, give the service more
+  memory or parse replays on your PC.
+- Check the host's current prices and free limits before you deploy.
+
 ## What it does (Phase 1)
 
 - **Home**: one focus habit for your next game.

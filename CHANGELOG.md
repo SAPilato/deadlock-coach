@@ -4,6 +4,14 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (cloud hosting)
+- `Dockerfile`: builds the site and runs the app with login on, data on a `/data` volume.
+- `COACH_PASSWORD_HASH`: set the login on a cloud host; make it with `npm run password-hash`.
+  A new hash logs every device out.
+- GitHub Actions: offline tests, frontend build and a container build on every push.
+- The bundled sample data is now in the repo (only the top-level `data/` is ignored), so
+  fresh clones and cloud builds have it.
+
 ### Added (open it on your phone)
 - `npm run share`: builds the site, runs the app on this PC only with a login, and opens a
   free Cloudflare quick tunnel, printing the public https link.
