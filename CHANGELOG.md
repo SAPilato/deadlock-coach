@@ -4,6 +4,23 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Changed (movement rechecked on real route times)
+- Route planner times now come from real trips: optimal = straight-line progress of the
+  fastest 15% of out-of-combat trips covering 5,000+ units in 30 s; normal = the median.
+  The old model was ~15% too fast even for the best trips.
+- New "Optimal (high rank)" option: the newest ranked Ascendant+ matches this patch
+  (327 vs 305 u/s at your rank). Zipline rides cost ~5 s each to get on (calibrated).
+- Your movement profile uses only matches you played.
+
+### Added (exact zipline control, waves in review)
+- Replays now yield exact zipline control from the replay's zipline nodes (Boon
+  `zipline_changes`): per lane, each team's owned share second by second.
+- Match review labels zipline control "Exact, from the replay" or estimated (~8% off).
+- Estimates start from replay-measured opening shares per lane and team, and never drop
+  below each team's uncapturable home stretch; the planner sliders respect it too.
+- "Show trooper waves" on the review minimap when the match's replay is parsed.
+- Tests use an empty replay folder, so replays parsed on your machine do not leak in.
+
 ### Added (team zipline ownership)
 - Route planner: pick Hidden King or Archmother and each lane's zipline reach (starts
   at the measured start reach, ~43%). Only your team's part can be ridden; the rest is

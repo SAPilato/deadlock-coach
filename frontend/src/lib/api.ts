@@ -190,7 +190,10 @@ export interface Paths {
   lanes: { id: number; name: string; color: string }[];
   /** Per lane id: [t, team 0 share, team 1 share] of the zipline at each change (est.). */
   reach: Record<string, [number, number, number][]>;
+  reach_source: "replay" | "estimate";
   start_reach: number | null;
+  home: Record<string, [number, number]> | null; // each team's uncapturable home stretch
+  has_waves: boolean; // trooper waves from a parsed replay (/macro/waves)
 }
 
 export type TrendStatus = "improving" | "same" | "worse" | "not_enough";
@@ -393,10 +396,24 @@ export interface Movement {
   fast_speed: number;
   detour: number;
   detour_best: number;
-  samples: { zip_s: number; foot_windows: number; trips: number };
+  samples: { zip_s: number; foot_windows: number; trips: number; route_trips: number };
   attach_s: number;
   switches: { count: number; gap_s: number | null }; // one zipline to another, measured
   start_reach: number | null; // share of each lane's zipline a team owns at the start, measured
+  // Route-time model: straight-line progress on real foot trips (fastest 15% / median), u/s.
+  progress_fast: number | null;
+  progress_normal: number | null;
+  ride_overhead_s: number; // per zipline ride, calibrated on real trips
+  high: {
+    matches: number;
+    badges: [number, number] | null;
+    zip_speed: number;
+    progress_fast: number | null;
+    progress_normal: number | null;
+    samples: { route_trips: number };
+  } | null;
+  /** From the newest parsed replay: per lane id, [team 0, team 1] home stretch and opening share. */
+  zipline_map: { home: Record<string, [number, number]>; start: Record<string, [number, number]>; match_id: number } | null;
   avg_hero_move: number;
   grid: number;
   walkable: [number, number][];

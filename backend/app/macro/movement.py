@@ -1,5 +1,16 @@
 """How fast players really travel: on foot vs on a zipline, measured from match data.
 
+Two profiles, same method: yours (your cached matches) and high rank (the newest ranked
+matches this patch with lobbies averaging HIGH_RANK_BADGE or more: Ascendant 1+).
+
+Route times: `progress_fast` / `progress_normal` are straight-line progress (units/s) on
+real out-of-combat foot trips of PROGRESS_S seconds covering PROGRESS_MIN_UNITS or more:
+the fastest 15% and the median. Bends, jumps and dashes are all inside that number, so
+the planner uses it with no separate detour factor. Checked by running the planner on
+those trips: the fastest 15% of foot trips match it within ~3%. RIDE_OVERHEAD_S per
+zipline ride (getting to it, mounting, the reach being an estimate) was calibrated the
+same way on zipline trips.
+
 Match metadata has every player's position each second plus a movement type
 (Valve's EMoveType: Normal, GroundDash, Slide, Ziplining, InAir, AirDash...).
 From cached matches we measure, in game units per second:
@@ -29,8 +40,14 @@ WINDOW_S = 6
 TRIP_S = 20
 OPTIMAL_PCT = 0.85  # est. "optimal movement" = the fastest 15% of real travel
 MAX_MATCHES = 15
+HIGH_RANK_BADGE = 101  # Ascendant 1 (ranks: tier * 10 + subrank; Ascendant = tier 10)
 MAX_STEP_UNITS = 2500  # bigger 1 s jumps are teleports or respawns
-ATTACH_S = 1.0  # est. time to latch on and drop off a zipline
+ATTACH_S = 1.0  # est. time to latch on and drop off a zipline (the old model; see RIDE_OVERHEAD_S)
+PROGRESS_S = 30  # route-time trips: this long, out of combat, alive
+PROGRESS_MIN_UNITS = 5000  # ...and covering at least this far (a real trip across the map)
+# est. Calibrated on 1,159 of your zipline trips: with this per ride, the fastest 15% match
+# the planner (1.01x). High-rank zipline trips still ran ~12% slower than predicted.
+RIDE_OVERHEAD_S = 5.0
 TRANSFER_GAP_S = 8  # off one zipline and on another within this counts as a switch
 START_S = 120  # the opening: no lane has been pushed yet
 
@@ -45,9 +62,53 @@ def _pct(values: list[float], q: float) -> float | None:
 
 
 def measure(st: AppState) -> dict:
-    rows = st.db.all("SELECT payload FROM cache WHERE key LIKE '/v1/matches/%/metadata' LIMIT ?", (MAX_MATCHES,))
-    if len(rows) in _memo:
-        return _memo[len(rows)]
+    """Your movement: matches you played (any cached match when none are, e.g. the sample)."""
+    from app.settings import Settings
+
+    acc = Settings(st.db).active_account
+    infos, others = [], []
+    for r in st.db.all("SELECT payload FROM cache WHERE key LIKE '/v1/matches/%/metadata'"):
+        info = json.loads(r["payload"]).get("match_info", {})
+        if info.get("game_mode") != 1:
+            continue
+        (infos if any(p.get("account_id") == acc for p in info.get("players", [])) else others).append(info)
+    infos = sorted(infos or others, key=lambda i: -(i.get("start_time") or 0))[:MAX_MATCHES]
+    return _measure(st, infos)
+
+
+def measure_high(st: AppState) -> dict | None:
+    """High-rank movement: the newest ranked matches this patch in Ascendant+ lobbies."""
+    from datetime import datetime
+
+    from app.gamedata.client import ApiError
+
+    patch = st.gd.latest_patch()
+    since = int(datetime.fromisoformat(patch["date"].replace("Z", "+00:00")).timestamp()) if patch and patch.get("date") else None
+    try:
+        rows = st.gd.high_rank_matches(HIGH_RANK_BADGE, since, MAX_MATCHES)
+    except ApiError:
+        return None
+    infos = []
+    for m in rows:
+        try:
+            meta = st.gd.match_metadata(m["match_id"])
+        except ApiError:
+            continue
+        info = meta.get("match_info", meta)
+        info["_average_badge"] = m.get("average_badge")
+        infos.append(info)
+    if not infos:
+        return None
+    out = _measure(st, infos)
+    badges = [i["_average_badge"] for i in infos if i.get("_average_badge")]
+    out["badges"] = [min(badges), max(badges)] if badges else None
+    return out
+
+
+def _measure(st: AppState, infos: list[dict]) -> dict:
+    key = tuple(sorted(i.get("match_id") or 0 for i in infos))
+    if key in _memo:
+        return _memo[key]
     enums = st.gd.enums()
     zip_id = next((int(k) for k, v in enums.get("EMoveType", {}).items() if v == "Ziplining"), None)
     out_id = next((int(k) for k, v in enums.get("ECombatType", {}).items() if v == "Out"), None)
@@ -60,11 +121,9 @@ def measure(st: AppState) -> dict:
     walkable: set[tuple[int, int]] = set()
     switch_gaps: list[int] = []
     start_us: list[float] = []
+    progress: list[float] = []
     matches = 0
-    for r in rows:
-        info = json.loads(r["payload"]).get("match_info", {})
-        if info.get("game_mode") != 1:
-            continue
+    for info in infos:
         matches += 1
         team_of = {p["player_slot"]: p["team"] for p in info.get("players", [])}
         for tr in decode_paths(info.get("match_paths")).values():
@@ -98,6 +157,11 @@ def measure(st: AppState) -> dict:
             for a in range(60, n - TRIP_S, WINDOW_S):
                 if clean(a, a + WINDOW_S):
                     foot_speeds.append(sum(step[a:a + WINDOW_S]) / WINDOW_S)
+            for a in range(120, n - PROGRESS_S, 15):
+                if clean(a, a + PROGRESS_S):
+                    straight = math.dist((tr.x[a], tr.y[a]), (tr.x[a + PROGRESS_S], tr.y[a + PROGRESS_S]))
+                    if straight >= PROGRESS_MIN_UNITS:
+                        progress.append(straight / PROGRESS_S)
             for a in range(60, n - TRIP_S, TRIP_S):
                 if clean(a, a + TRIP_S):
                     path = sum(step[a:a + TRIP_S])
@@ -113,8 +177,12 @@ def measure(st: AppState) -> dict:
         "fast_speed": _pct(moving, OPTIMAL_PCT),
         "detour": statistics.median(detours) if detours else None,
         "detour_best": _pct(detours, 0.25),  # the most direct quarter of real trips
-        "samples": {"zip_s": len(zip_speeds), "foot_windows": len(moving), "trips": len(detours)},
+        "samples": {"zip_s": len(zip_speeds), "foot_windows": len(moving), "trips": len(detours), "route_trips": len(progress)},
         "attach_s": ATTACH_S,
+        # Route-time model the planner uses (see module docstring).
+        "progress_fast": _pct(progress, OPTIMAL_PCT),
+        "progress_normal": statistics.median(progress) if progress else None,
+        "ride_overhead_s": RIDE_OVERHEAD_S,
         "switches": {"count": len(switch_gaps), "gap_s": statistics.median(switch_gaps) if switch_gaps else None},
         # How far each team's zipline reaches at the start, from its own base (share of the lane).
         "start_reach": _pct(start_us, 0.99),
@@ -122,5 +190,5 @@ def measure(st: AppState) -> dict:
         "grid": GRID,
         "walkable": sorted([i, j] for i, j in walkable),
     }
-    _memo[len(rows)] = result
+    _memo[key] = result
     return result

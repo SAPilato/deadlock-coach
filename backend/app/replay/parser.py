@@ -49,10 +49,34 @@ def urn_episodes(rows: list[dict], to_seconds) -> list[dict]:
     return episodes
 
 
+TEAM_FROM_BOON = {2: 0, 3: 1}  # Boon team numbers -> match teams; others (0 neutral, 4) -> None
+
+
+def extract_zipline(demo, geo) -> dict | None:
+    """Exact zipline control per lane from the replay's zipline nodes (analysis/zipline.py)."""
+    from app.analysis.zipline import control_from_nodes
+
+    nodes_df = demo.zipline_nodes
+    changes_df = demo.zipline_changes
+    if nodes_df is None or not nodes_df.height or changes_df is None or not changes_df.height:
+        return None
+    first = nodes_df.sort("tick").unique(subset=["node_handle"], keep="first")
+    nodes = [
+        {"handle": r["node_handle"], "lane": r["lane"], "x": r["x"], "y": r["y"], "capturable": r["capturable"]}
+        for r in first.iter_rows(named=True)
+    ]
+    changes = [
+        (_match_seconds(demo, r["tick"]), r["node_handle"], TEAM_FROM_BOON.get(r["team_num"]))
+        for r in changes_df.sort("tick").iter_rows(named=True)
+        if r["change"] in ("observed", "owner_changed")
+    ]
+    return control_from_nodes(nodes, changes, geo.lanes)
+
+
 def parse_demo(
     path: Path, match_id: int, geo=None, start_time: int | None = None
-) -> tuple[ReplayData, dict | None, dict | None]:
-    """Urn episodes for the rules; with `geo`, also trooper waves and live-map truth."""
+) -> tuple[ReplayData, dict | None, dict | None, dict | None]:
+    """Urn episodes for the rules; with `geo`, also trooper waves, live-map truth and zipline control."""
     from boon import Demo  # imported lazily: heavy native module
 
     from app.macro.truth import extract_truth
@@ -68,4 +92,5 @@ def parse_demo(
         notes.append("No urn events found in this replay.")
     waves = extract_waves(demo, geo) if geo is not None else None
     truth = extract_truth(demo, match_id, start_time) if geo is not None else None
-    return ReplayData(match_id=match_id, urn_events=episodes, notes=notes), waves, truth
+    zipline = extract_zipline(demo, geo) if geo is not None else None
+    return ReplayData(match_id=match_id, urn_events=episodes, notes=notes), waves, truth, zipline

@@ -1,5 +1,16 @@
 import pytest
 
+import app.replay.jobs as jobs
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _no_local_replays(tmp_path_factory):
+    """Tests see only the bundled sample replay, never the replays parsed on this machine."""
+    saved = jobs.DEMO_DIR
+    jobs.DEMO_DIR = tmp_path_factory.mktemp("replays")
+    yield
+    jobs.DEMO_DIR = saved
+
 from app.config import DEFAULT_BRACKET
 from app.db import Database
 from app.gamedata.cache import Cache

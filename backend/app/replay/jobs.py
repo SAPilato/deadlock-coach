@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 RESULT_NAME = "replay.json"
 WAVES_NAME = "waves.json.gz"
 TRUTH_NAME = "truth.json"
+ZIPLINE_NAME = "zipline.json"  # exact zipline control (analysis/zipline.py)
 # Parsed results of the seed's sample replay, so the urn check and wave view work out of the box.
 SEED_REPLAYS = Path(__file__).resolve().parents[1] / "seed" / "data" / "replays"
 
@@ -82,6 +83,30 @@ def latest_truth() -> dict | None:
     return _truth_memo[key]
 
 
+def zipline_for(match_id: int) -> dict | None:
+    """Exact zipline control for a match with a parsed replay."""
+    p = result_file(match_id, ZIPLINE_NAME)
+    return json.loads(p.read_text(encoding="utf-8")) if p else None
+
+
+_zip_map_memo: dict[tuple, dict | None] = {}
+
+
+def zipline_map() -> dict | None:
+    """Static zipline layout from the newest parsed replay: each lane's home stretch and
+    opening shares per team ({"home": {lane: [h0, h1]}, "start": {...}, "match_id"})."""
+    files = [p for base in (DEMO_DIR, SEED_REPLAYS) if base.exists() for p in base.glob(f"*/{ZIPLINE_NAME}")]
+    key = tuple(sorted((str(p), p.stat().st_mtime) for p in files))
+    if key not in _zip_map_memo:
+        _zip_map_memo.clear()
+        newest = max(files, key=lambda p: p.stat().st_mtime, default=None)
+        data = json.loads(newest.read_text(encoding="utf-8")) if newest else None
+        _zip_map_memo[key] = (
+            {"home": data["home"], "start": data["start"], "match_id": int(newest.parent.name)} if data and data.get("start") else None
+        )
+    return _zip_map_memo[key]
+
+
 def waves_for(match_id: int) -> dict | None:
     from app.macro.waves import load_waves
 
@@ -118,12 +143,14 @@ def run_job(st: AppState, match_id: int, uploaded: Path | None = None) -> None:
             start_time = st.gd.match_metadata(match_id)["match_info"].get("start_time")
         except (ApiError, KeyError):
             start_time = None
-        data, waves, truth = parse_demo(dem, match_id, geometry(st.gd), start_time)
+        data, waves, truth, zipline = parse_demo(dem, match_id, geometry(st.gd), start_time)
         data.save(folder / RESULT_NAME)
         if waves:
             save_waves(waves, folder / WAVES_NAME)
         if truth:
             save_truth(truth, folder / TRUTH_NAME)
+        if zipline:
+            (folder / ZIPLINE_NAME).write_text(json.dumps(zipline, separators=(",", ":")), encoding="utf-8")
         dem.unlink(missing_ok=True)  # demos are 300-500 MB; the parsed result is all we keep
         set_status(st, match_id, "done")
     except ReplayUnavailable as e:

@@ -16,7 +16,7 @@ const MAX_SAVING_S = 20; // full colour at 20+ seconds saved
 const TIE_S = 2; // est. closer than this is a tie: estimates are not that precise
 
 type Mode = "pair" | "grid";
-type Style = "optimal" | "normal";
+type Style = "optimal" | "high" | "normal";
 
 function Marker({ p, label }: { p: Pt; label: string }) {
   return (
@@ -61,23 +61,31 @@ export default function RouteMode() {
   const m = mv.data;
   const lanes: Lane[] = (d?.layers.find((l) => l.id === "lanes")?.lines ?? []) as Lane[];
   const hero = d?.heroes.find((h) => h.id === heroId) ?? d?.heroes[0];
+  // Route times from real trips: straight-line progress, so no separate detour factor.
+  const profile = style === "high" && m?.high ? m.high : m;
+  const progress = style === "normal" ? profile?.progress_normal : profile?.progress_fast;
   const speeds: Speeds | null =
-    m && hero
+    m && hero && progress
       ? {
-          // Measured speeds scaled by this hero's base move speed vs the average hero.
-          foot: (style === "optimal" ? m.fast_speed : m.foot_speed) * (hero.move / m.avg_hero_move),
-          zip: m.zip_speed,
-          detour: style === "optimal" ? m.detour_best : m.detour,
-          attach: m.attach_s,
+          // Scaled by this hero's base move speed vs the average hero.
+          foot: progress * (hero.move / m.avg_hero_move),
+          zip: profile!.zip_speed,
+          detour: 1,
+          attach: m.ride_overhead_s,
         }
       : null;
 
   // Your team's part of each zipline: from your base out to its reach (start reach measured).
-  const start = m?.start_reach ?? 0.5;
   const side: Team = team ?? 0;
+  // Opening share and home stretch per lane, from the newest parsed replay (else one measured share).
+  const startFor = (laneId: number) => m?.zipline_map?.start[String(laneId)]?.[side] ?? m?.start_reach ?? 0.5;
+  const homeFor = (laneId: number) => m?.zipline_map?.home[String(laneId)]?.[side] ?? 0;
   const owned = useMemo(
-    () => new Map(lanes.map((l) => [l.id, ownedSection(side, reach[l.id] ?? start)] as [number, [number, number]])),
-    [lanes, side, reach, start],
+    () =>
+      new Map(
+        lanes.map((l) => [l.id, ownedSection(side, Math.max(homeFor(l.id), reach[l.id] ?? startFor(l.id)))] as [number, [number, number]]),
+      ),
+    [lanes, side, reach, m],
   );
   // Every zipline stretch you can ride and where you can switch; rebuilt when ownership changes.
   const graph = useMemo(() => (d ? buildGraph(lanes, d.transform, owned, side) : null), [d, lanes, owned, side]);
@@ -232,7 +240,8 @@ export default function RouteMode() {
             </button>
           </div>
           {lanes.map((l) => {
-            const r = reach[l.id] ?? start;
+            const home = homeFor(l.id);
+            const r = Math.max(home, reach[l.id] ?? startFor(l.id));
             return (
               <label key={l.id} className="grid grid-cols-[6rem_1fr_3.5rem] items-center gap-3">
                 <span className="font-bold">
@@ -240,8 +249,8 @@ export default function RouteMode() {
                 </span>
                 <input
                   type="range"
-                  min={0}
-                  max={100}
+                  min={Math.ceil(home * 100)}
+                  max={Math.floor((1 - (m?.zipline_map?.home[String(l.id)]?.[1 - side] ?? 0)) * 100)}
                   value={Math.round(r * 100)}
                   onChange={(e) => setReach((x) => ({ ...x, [l.id]: Number(e.target.value) / 100 }))}
                   className="w-full accent-accent"
@@ -267,7 +276,8 @@ export default function RouteMode() {
           <label className="block">
             <span className="label">On foot</span>
             <select value={style} onChange={(e) => setStyle(e.target.value as Style)} className="mt-1 w-full rounded-lg bg-panel2 border border-line px-3 py-2">
-              <option value="optimal">Optimal movement</option>
+              <option value="optimal">Optimal (your rank)</option>
+              {m.high && <option value="high">Optimal (high rank)</option>}
               <option value="normal">Normal movement</option>
             </select>
           </label>
@@ -368,13 +378,19 @@ export default function RouteMode() {
 
         <ul className="space-y-1 text-sm text-muted">
           <li>
-            Speeds measured from {m.matches} real matches: zipline {num(m.zip_speed)} u/s, optimal movement {num(m.fast_speed)} u/s,
-            normal {num(m.foot_speed)} u/s.
+            Times come from real trips across the map. Optimal = the fastest 15%: {num(m.progress_fast ?? 0)} u/s at your rank (
+            {num(m.samples.route_trips)} trips)
+            {m.high?.progress_fast && m.progress_fast
+              ? `, ${num(m.high.progress_fast)} u/s at high rank (${num(m.high.samples.route_trips)} trips, badges ${m.high.badges?.[0]}–${m.high.badges?.[1]}): ${Math.round((m.high.progress_fast / m.progress_fast - 1) * 100)}% faster`
+              : ""}
+            . Normal = the median.
           </li>
-          <li>Real paths bend: walking counts ×{num(speeds.detour, 2)} the straight line.</li>
           <li>
-            You ride only your team's part of each zipline, both ways at the same speed. At the start each team owns{" "}
-            {Math.round(start * 100)}% of every lane (measured). Push a lane to extend yours.
+            Zipline {num(m.zip_speed)} u/s, plus ~{num(m.ride_overhead_s)} s per ride to get on (calibrated on real trips).
+          </li>
+          <li>
+            You ride only your team's part of each zipline, both ways at the same speed. Each team keeps a home stretch nobody
+            can capture{m.zipline_map ? ` (measured from replay ${m.zipline_map.match_id})` : ""}. Push a lane to extend yours.
           </li>
           <li>Zipline boost and blocked lanes are not modelled.</li>
           {m.switches.count > 0 && (

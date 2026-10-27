@@ -129,3 +129,32 @@ def test_zipline_reach_grows_with_riders_and_never_overlaps():
     assert out[1] == [[0, 0.43, 0.43], [60, 0.55, 0.43], [90, 0.3, 0.7]]
     assert out[4] == [[0, 0.43, 0.43]]
     assert all(r0 + r1 <= 1.0 for _, r0, r1 in out[1])
+
+
+class _StraightLane:
+    """A lane along x from 0 (team 0's base) to 1000 (team 1's base)."""
+    id = 1
+    length = 1000.0
+
+    def project(self, x, y):
+        return x, abs(y)
+
+
+def test_exact_zipline_control_from_replay_nodes():
+    from app.analysis.zipline import control_from_nodes
+
+    # 11 nodes at x = 0, 100, ..., 1000; the two at each end cannot be captured.
+    nodes = [{"handle": i, "lane": 1, "x": i * 100.0, "y": 0.0, "capturable": 2 <= i <= 8} for i in range(11)]
+    start = [(0, i, 0) for i in range(5)] + [(0, i, 1) for i in range(6, 11)]  # node 5 neutral at first
+    changes = start + [(300, 5, 1), (300, 4, 1), (900, 4, 0), (900, 5, 0), (900, 6, 0)]
+    out = control_from_nodes(nodes, changes, {1: _StraightLane()})
+    assert out["home"]["1"] == [0.1, 0.1]  # nodes 0-1 and 9-10 are fixed
+    assert out["start"]["1"] == [0.4, 0.4]
+    assert out["timeline"]["1"] == [[0, 0.4, 0.4], [300, 0.3, 0.6], [900, 0.6, 0.3]]
+
+
+def test_estimate_starts_per_lane_and_keeps_home_stretches():
+    samples = {60: [(1, 0, 0.95)]}  # a rider deep in the enemy's home stretch
+    out = reach_from_samples(samples, [1], start={1: [0.46, 0.41]}, home={1: [0.2, 0.2]})
+    assert out[1][0] == [0, 0.46, 0.41]
+    assert out[1][-1] == [60, 0.8, 0.2]  # capped at the enemy's home stretch, which they keep

@@ -189,5 +189,13 @@ class GameData:
         """Items bought per phase (0-9, 9-20, 20-30, 30+ min) with pick and win counts."""
         return self._bench("/v1/analytics/item-flow-stats", {"hero_ids": hero_id, **self._bracket(bracket)})
 
+    def high_rank_matches(self, min_badge: int, since: int | None, limit: int) -> list[dict]:
+        """Newest ranked matches whose lobbies average `min_badge` or more (bulk metadata, no paths)."""
+        params = {"min_average_badge": min_badge, "game_mode": "normal", "match_mode": "ranked", "include_info": "true",
+                  "limit": limit, "order_by": "start_time", "order_direction": "desc"}
+        if since:
+            params["min_unix_timestamp"] = since
+        return self.client.get_json("/v1/matches/metadata", params, ttl=DAY, patch_version=self.live_build())
+
     def hero_stats(self, bracket: tuple[int, int]) -> list[dict]:
         return self._bench("/v1/analytics/hero-stats", self._bracket(bracket))

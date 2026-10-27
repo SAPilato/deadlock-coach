@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CableCar, Skull } from "lucide-react";
+import { CableCar, Check, Skull, Waves } from "lucide-react";
 import { api, type Paths, type Report, type TimelineEvent } from "../lib/api";
 import { clock } from "../lib/format";
-import Minimap, { type LaneSection, type Marker } from "./Minimap";
+import Minimap, { type LaneSection, type Marker, type WaveDot } from "./Minimap";
 import SoulsChart from "./SoulsChart";
 import { useThemeColors } from "../lib/theme";
 import { EstTag, Icon } from "./ui";
@@ -72,6 +73,24 @@ export default function Timeline({
   const laneOf = new Map((paths.data?.lanes ?? []).map((l) => [l.id, l]));
   const myZipSeconds = me ? me.zip.reduce((sum, [a, b]) => sum + (b - a), 0) : 0;
   const control = paths.data && me ? zipControl(paths.data, me.team, t) : [];
+  // Trooper waves from the parsed replay, on demand.
+  const [showWaves, setShowWaves] = useState(false);
+  const waves = useQuery({
+    queryKey: ["waves", report.match.id],
+    queryFn: () => api.macroWaves(report.match.id),
+    enabled: showWaves && !!paths.data?.has_waves,
+    staleTime: Infinity,
+  });
+  const waveDots: WaveDot[] = [];
+  if (showWaves && waves.data?.frames.length && me) {
+    const w = waves.data;
+    const frame = w.frames[Math.min(w.frames.length - 1, Math.max(0, Math.round(t / w.step)))];
+    for (const [laneId, lane] of Object.entries(frame.lanes)) {
+      for (const [team, at, n] of lane.w) {
+        waveDots.push({ laneId: Number(laneId), at, troopers: n, color: team === me.team ? ALLY : ENEMY });
+      }
+    }
+  }
   // Each side's part of every zipline, painted from its own base (lanes run from team 0's base).
   const sections: LaneSection[] = control.flatMap((c) => {
     const [r0, r1] = me!.team === 0 ? [c.mine, c.theirs] : [c.theirs, c.mine];
@@ -207,8 +226,30 @@ export default function Timeline({
           <span><Icon icon={CableCar} /> On a zipline</span>
           <span>Faded ✕: dead</span>
         </div>
-        <Minimap map={report.map} markers={markers} sections={sections} caption={`Positions at ${clock(t)}. Hover a hero for their name.`} />
-        {control.length > 0 && <ZipControl control={control} t={t} />}
+        <label className={`mb-2 inline-flex items-center gap-2 ${paths.data?.has_waves ? "" : "text-muted"}`}>
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-accent"
+            checked={showWaves}
+            disabled={!paths.data?.has_waves}
+            onChange={(e) => setShowWaves(e.target.checked)}
+          />
+          <Icon icon={Waves} /> Show trooper waves
+          {!paths.data?.has_waves && (
+            <a href="#replay" className="text-sm text-accent hover:underline">
+              needs the replay file
+            </a>
+          )}
+          {showWaves && waves.isLoading && <span className="text-sm text-dim">loading…</span>}
+        </label>
+        <Minimap
+          map={report.map}
+          markers={markers}
+          sections={sections}
+          waves={waveDots}
+          caption={`Positions at ${clock(t)}. Hover a hero for their name.${waveDots.length ? " Dots on lanes: waves (bigger = more troopers)." : ""}`}
+        />
+        {control.length > 0 && <ZipControl control={control} t={t} exact={paths.data?.reach_source === "replay"} />}
         {paths.data && <LiveList live={live} t={t} />}
       </div>
     </div>
@@ -299,17 +340,26 @@ function zipControl(paths: Paths, myTeam: number, t: number): Control[] {
   });
 }
 
-function ZipControl({ control, t }: { control: Control[]; t: number }) {
+function ZipControl({ control, t, exact }: { control: Control[]; t: number; exact: boolean }) {
   return (
     <div className="mt-4 space-y-2">
       <div className="flex flex-wrap items-baseline gap-x-3">
         <h4 className="label">
           <Icon icon={CableCar} /> Zipline control at {clock(t)}
         </h4>
-        <span className="text-sm text-dim">
-          You ride only your part.
-          <EstTag title="From riders: a team owns at least as far as one of its players rode." />
-        </span>
+        {exact ? (
+          <span className="chip border-good py-0 text-sm text-good">
+            <Icon icon={Check} /> Exact, from the replay
+          </span>
+        ) : (
+          <span className="text-sm text-dim">
+            From riders, about ±8% of the lane.
+            <EstTag title="A team owns at least as far as one of its players rode. Checked against 2 replays." />{" "}
+            <a href="#replay" className="text-accent hover:underline">
+              Load the replay for exact
+            </a>
+          </span>
+        )}
       </div>
       <ul className="space-y-1">
         {control.map(({ lane, mine, theirs }) => (
@@ -333,7 +383,7 @@ function ZipControl({ control, t }: { control: Control[]; t: number }) {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted">Your base on the left. The gap: no rider seen there yet.</p>
+      <p className="text-xs text-muted">Your base on the left. The gap: {exact ? "neutral, nobody owns it yet." : "no rider seen there yet."}</p>
     </div>
   );
 }

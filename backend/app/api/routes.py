@@ -173,8 +173,12 @@ def paths(
     acc = _account(s, account_id)
     ctx = _api_errors(lambda: load_context(st.gd, match_id, acc, s.bracket))
     from app.macro.movement import measure
+    from app.replay.jobs import waves_for, zipline_for, zipline_map
 
-    return build_paths(st.gd, ctx, step, start_reach=measure(st).get("start_reach"))
+    return build_paths(
+        st.gd, ctx, step, start_reach=measure(st).get("start_reach"),
+        exact=zipline_for(match_id), zip_map=zipline_map(), has_waves=waves_for(match_id) is not None,
+    )
 
 
 # ---- replays ------------------------------------------------------------------------

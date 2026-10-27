@@ -53,18 +53,28 @@ function slice(pts: [number, number][], f0: number, f1: number): [number, number
   return out;
 }
 
+/** A trooper wave to draw: a fraction along a lane (from team 0's base), sized by troopers. */
+export interface WaveDot {
+  laneId: number;
+  at: number;
+  color: string;
+  troopers: number;
+}
+
 export default function Minimap({
   map,
   markers,
   maxWidth = 560,
   caption,
   sections = [],
+  waves = [],
 }: {
   map: MapLayer;
   markers: Marker[];
   maxWidth?: number;
   caption?: string;
   sections?: LaneSection[];
+  waves?: WaveDot[];
 }) {
   const [hover, setHover] = useState<Marker | null>(null);
   const uid = useId().replace(/:/g, "");
@@ -117,6 +127,24 @@ export default function Minimap({
                 strokeWidth={14}
                 strokeOpacity={0.7}
                 strokeLinecap="round"
+                aria-hidden
+              />
+            );
+          })}
+          {waves.map((w, i) => {
+            const lane = map.lanes.find((l) => l.id === w.laneId);
+            if (!lane) return null;
+            const [l, t] = slice(lane.pts, w.at, w.at)[0];
+            return (
+              <circle
+                key={`wave${i}`}
+                cx={l * S}
+                cy={t * S}
+                r={10 + Math.min(14, w.troopers * 2)}
+                fill={w.color}
+                fillOpacity={0.85}
+                stroke={SURFACE}
+                strokeWidth={3}
                 aria-hidden
               />
             );

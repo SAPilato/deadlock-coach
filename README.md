@@ -29,7 +29,9 @@ Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offlin
 - **Replays (optional)**: auto-download or upload a `.dem` to add the urn check.
 - **Live review**: the minimap shows every hero's portrait. Scrub the timeline to see
   who is on a zipline (and which lane) or dead at that second. Your rides show as bars.
-  Zipline control shows how much of each lane's zipline each team owns at that second.
+  Zipline control shows how much of each lane's zipline each team owns at that second:
+  exact when the match's replay is parsed, else estimated from riders. With a replay,
+  "Show trooper waves" draws the waves on the minimap.
 - **Trends**: each habit over your last 20 games: improving, same or worse.
 
 Game phases come from objectives, not a clock:
@@ -103,8 +105,20 @@ Zipline ownership (from game settings and 60 real matches):
   objective, and the two teams' parts do not overlap.
 - Your part grows as you push: the furthest 1% of rides reach 46% with no Guardian
   down, 58% after the enemy Guardian, 72% after their Walker, 78% after Base Guardians.
-- In match review, ownership comes from riders: a team owns at least as far as one of
-  its players rode, and the enemy owns no more than the rest. `est.`
+- With a parsed replay, ownership is exact: every zipline node's owner over time (Boon
+  `zipline_nodes` / `zipline_changes`). Troopers capture nodes; each team also keeps a home
+  stretch (18-25% of a lane) that cannot be captured.
+- Without a replay, ownership comes from riders, starting from the replay-measured opening
+  shares and never below a home stretch. Scored on 2 replays: ~8% of the lane off on
+  average. Heroes near the zipline did not help reliably (troopers are not in match data).
+
+Movement (rechecked against real route times):
+- The planner was run on 649 high-rank (Ascendant+) and 1,471 of your trips across the
+  map. The old "optimal" (fastest speed x straightest detour) was too fast: even the
+  fastest 15% of trips took 1.15x its prediction.
+- Optimal is now the straight-line progress of the fastest 15% of real foot trips:
+  305 u/s at your rank, 327 u/s at high rank (+7%). Normal (median) is ~225 u/s at both.
+- Each zipline ride costs ~5 s to get on (calibrated so your fastest zipline trips match).
 
 Macro Map notes:
 - The asset map data is partly stale (old urn spawns, icon-offset objectives). The

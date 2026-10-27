@@ -21,7 +21,7 @@ def build(match_id: int, dem: Path) -> None:
     st = create_state(DB_PATH)
     geo = MapGeometry(st.gd.map_data(), st.gd.generic_data())  # waves only need lanes, not truth
     start = st.gd.match_metadata(match_id)["match_info"].get("start_time")
-    data, waves, truth = parse_demo(dem, match_id, geo, start)
+    data, waves, truth, _zipline = parse_demo(dem, match_id, geo, start)
     out = SEED_REPLAYS / str(match_id)
     data.save(out / RESULT_NAME)
     save_waves(waves or {"frames": []}, out / WAVES_NAME)

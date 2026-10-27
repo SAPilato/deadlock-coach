@@ -230,13 +230,16 @@ def _lane(gd: GameData, ctx: MatchContext) -> dict:
     }
 
 
-def build_paths(gd: GameData, ctx: MatchContext, step: int = 5, start_reach: float | None = None) -> dict:
+def build_paths(gd: GameData, ctx: MatchContext, step: int = 5, start_reach: float | None = None,
+                exact: dict | None = None, zip_map: dict | None = None, has_waves: bool = False) -> dict:
     """Minimap positions for every player every `step` seconds, for the timeline scrubber.
 
     `zip` lists each zipline ride to the second ([start, end, lane id]) from the match's
     movement types, so the review can show who is riding at any moment.
     `reach` gives each team's share of every lane's zipline over time (analysis/zipline.py),
-    as [t, team 0 reach, team 1 reach] at each change.
+    as [t, team 0 reach, team 1 reach] at each change: exact from a parsed replay, else
+    estimated from riders, starting from the replay-measured opening shares (`zip_map`)
+    and never below each team's home stretch.
     """
     zip_id = ctx.enum_value("EMoveType", "Ziplining")
     players = []
@@ -259,8 +262,14 @@ def build_paths(gd: GameData, ctx: MatchContext, step: int = 5, start_reach: flo
             ],
         })
     lanes = [{"id": ln.id, "name": ln.name, "color": ln.color} for ln in ctx.geo.lanes.values()]
-    reach = zipline_reach(ctx, start_reach) if start_reach is not None else {}
+    if exact:
+        reach, source = {int(k): v for k, v in exact["timeline"].items()}, "replay"
+    else:
+        start = {int(k): v for k, v in zip_map["start"].items()} if zip_map else start_reach
+        home = {int(k): v for k, v in zip_map["home"].items()} if zip_map else None
+        reach, source = (zipline_reach(ctx, start, home) if start is not None else {}), "estimate"
     return {
         "step": step, "duration_s": ctx.duration_s, "players": players, "lanes": lanes,
-        "reach": {str(k): v for k, v in reach.items()}, "start_reach": start_reach,
+        "reach": {str(k): v for k, v in reach.items()}, "reach_source": source, "start_reach": start_reach,
+        "home": (exact or zip_map or {}).get("home"), "has_waves": has_waves,
     }

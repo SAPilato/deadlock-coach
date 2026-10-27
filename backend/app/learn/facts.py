@@ -95,8 +95,9 @@ def lesson_facts(st: AppState) -> dict[str, dict]:
 
     from app.macro.movement import measure
 
+    # Optimal running = straight-line progress of the fastest 15% of real trips (macro/movement.py).
     add("zip_vs_run", "measured", lambda: (
-        lambda mv: f"Ziplines are {mv['zip_speed'] / mv['fast_speed']:.1f}× faster than optimal running."
+        lambda mv: f"Ziplines are {mv['zip_speed'] / (mv.get('progress_fast') or mv['fast_speed']):.1f}× faster than optimal running."
     )(measure(st)))
 
     from app.replay.jobs import latest_truth

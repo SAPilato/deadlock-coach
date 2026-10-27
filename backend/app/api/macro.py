@@ -10,9 +10,9 @@ from app.buildlab.catalog import playable_heroes
 from app.gamedata.client import ApiError
 from app.macro.heatmap import heatmap
 from app.macro.layers import TEAM_NAMES, build_layers
-from app.macro.movement import measure
+from app.macro.movement import measure, measure_high
 from app.macro.scenarios import list_scenarios, scenario
-from app.replay.jobs import SEED_REPLAYS, matches_with_waves, waves_for
+from app.replay.jobs import SEED_REPLAYS, matches_with_waves, waves_for, zipline_map
 from app.report import hero_card
 from app.settings import Settings
 from app.state import AppState
@@ -95,7 +95,13 @@ def waves(match_id: int | None = None, st: AppState = Depends(coach), s: Setting
 
 @router.get("/movement")
 def movement(st: AppState = Depends(coach)):
-    return _api_errors(lambda: measure(st))
+    def both():
+        high = measure_high(st)
+        keep = ("matches", "zip_speed", "foot_speed", "fast_speed", "detour", "detour_best", "samples", "switches", "badges",
+                "progress_fast", "progress_normal", "ride_overhead_s")
+        return {**measure(st), "high": {k: high.get(k) for k in keep} if high else None, "zipline_map": zipline_map()}
+
+    return _api_errors(both)
 
 
 @router.get("/heatmap")
