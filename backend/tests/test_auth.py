@@ -70,9 +70,9 @@ def test_shared_app_needs_login_for_the_api():
     with TestClient(_app(require_login=True)) as c:
         assert c.get("/api/auth/status").json() == {"required": True, "logged_in": False}
         assert c.get("/api/meta").status_code == 401
-        for path in ("/docs", "/openapi.json"):  # no API description (the built site may answer instead)
-            r = c.get(path)
-            assert "swagger" not in r.text.lower() and "application/json" not in r.headers.get("content-type", "")
+        # No API description: no docs page, no schema (a 404 or the built site may answer instead).
+        assert "swagger" not in c.get("/docs").text.lower()
+        assert '"openapi"' not in c.get("/openapi.json").text
         assert c.post("/api/auth/login", json={"password": "wrong"}).status_code == 401
         r = c.post("/api/auth/login", json={"password": PASSWORD})
         assert r.status_code == 200 and COOKIE in r.cookies
