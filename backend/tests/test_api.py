@@ -47,6 +47,12 @@ def test_paths_for_scrubber(api, seed_info):
     assert len(p["players"]) == 12
     assert sum(1 for q in p["players"] if q["is_me"]) == 1
     assert len(p["players"][0]["pts"]) == p["duration_s"] // 10 + 1
+    # Zipline rides come from the per-second movement types: every player rides at some point.
+    lane_ids = {ln["id"] for ln in p["lanes"]}
+    assert len(lane_ids) == 3
+    rides = [r for q in p["players"] for r in q["zip"]]
+    assert all(q["zip"] for q in p["players"])
+    assert all(0 <= start < end <= p["duration_s"] + 1 and lane in lane_ids for start, end, lane in rides)
 
 
 def test_trends_and_focus(api):

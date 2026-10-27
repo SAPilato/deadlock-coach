@@ -8,7 +8,8 @@ From cached matches we measure, in game units per second:
   ordinary movement; the 85th percentile is "optimal movement" (sprint, dash-jumps);
 - detour: path length / straight-line distance over 20 s trips (streets bend);
   the median is ordinary travel, the lower quartile is the most direct routes;
-- walkable cells: grid cells players actually stood in.
+- walkable cells: grid cells players actually stood in;
+- zipline switches: one lane's zipline to another's within TRANSFER_GAP_S.
 Ziplines can be ridden both ways (convar citadel_zipline_allow_direction_choice).
 """
 from __future__ import annotations
@@ -17,7 +18,7 @@ import json
 import math
 import statistics
 
-from app.analysis.paths import decode_paths
+from app.analysis.paths import decode_paths, zipline_rides
 from app.state import AppState
 
 GRID = 40
@@ -27,6 +28,7 @@ OPTIMAL_PCT = 0.85  # est. "optimal movement" = the fastest 15% of real travel
 MAX_MATCHES = 15
 MAX_STEP_UNITS = 2500  # bigger 1 s jumps are teleports or respawns
 ATTACH_S = 1.0  # est. time to latch on and drop off a zipline
+TRANSFER_GAP_S = 8  # off one zipline and on another within this counts as a switch
 
 _memo: dict[int, dict] = {}
 
@@ -52,6 +54,7 @@ def measure(st: AppState) -> dict:
     foot_speeds: list[float] = []
     detours: list[float] = []
     walkable: set[tuple[int, int]] = set()
+    switch_gaps: list[int] = []
     matches = 0
     for r in rows:
         info = json.loads(r["payload"]).get("match_info", {})
@@ -67,6 +70,10 @@ def measure(st: AppState) -> dict:
                 left, top = geo.to_rel(tr.x[i], tr.y[i])
                 if 0 <= left < 1 and 0 <= top < 1 and tr.health[i] > 0:
                     walkable.add((int(left * GRID), int(top * GRID)))
+            rides = zipline_rides(tr, zip_id, geo.lanes.values())
+            for r0, r1 in zip(rides, rides[1:]):
+                if r0.lane_id != r1.lane_id and r1.start - r0.end <= TRANSFER_GAP_S:
+                    switch_gaps.append(r1.start - r0.end)
             for i in range(n - 1):
                 if tr.move[i] == zip_id and tr.move[i + 1] == zip_id and tr.health[i] > 0 and step[i] < MAX_STEP_UNITS:
                     zip_speeds.append(step[i])
@@ -97,6 +104,7 @@ def measure(st: AppState) -> dict:
         "detour_best": _pct(detours, 0.25),  # the most direct quarter of real trips
         "samples": {"zip_s": len(zip_speeds), "foot_windows": len(moving), "trips": len(detours)},
         "attach_s": ATTACH_S,
+        "switches": {"count": len(switch_gaps), "gap_s": statistics.median(switch_gaps) if switch_gaps else None},
         "avg_hero_move": sum(heroes) / len(heroes) if heroes else None,
         "grid": GRID,
         "walkable": sorted([i, j] for i, j in walkable),

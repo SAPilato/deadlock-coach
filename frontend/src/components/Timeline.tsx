@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { api, type Report, type TimelineEvent } from "../lib/api";
+import { CableCar, Skull } from "lucide-react";
+import { api, type Paths, type Report, type TimelineEvent } from "../lib/api";
 import { clock } from "../lib/format";
 import Minimap, { type Marker } from "./Minimap";
 import SoulsChart from "./SoulsChart";
 import { useThemeColors } from "../lib/theme";
+import { Icon } from "./ui";
 
 const ALLY = "#3987e5";
 const ENEMY = "#d95926";
@@ -46,24 +48,29 @@ export default function Timeline({
   const near = report.timeline.events.filter((e) => Math.abs(e.t - t) <= 30).slice(0, 5);
 
   const markers: Marker[] = [];
+  const live = paths.data ? liveStatus(paths.data, t) : [];
   if (paths.data) {
     const idx = Math.min(Math.round(t / paths.data.step), paths.data.players[0]?.pts.length - 1);
-    for (const p of paths.data.players) {
+    for (const { p, dead, lane } of live) {
       const pt = p.pts[Math.max(0, idx)];
       if (!pt) continue;
-      const dead = p.dead.some(([a, b]) => a <= t && t < b);
       markers.push({
         key: `p${p.slot}`,
         left: pt[0],
         top: pt[1],
         color: p.ally ? ALLY : ENEMY,
-        label: `${p.is_me ? "You" : p.name}${dead ? " (dead)" : ""}`,
+        label: `${p.is_me ? "You" : p.name}${dead ? " (dead)" : lane ? ` (on the ${lane.name} zipline)` : ""}`,
         shape: dead ? "x" : "dot",
         emphasis: p.is_me,
-        size: p.is_me ? 12 : 10,
+        size: p.is_me ? 24 : 26,
+        image: p.image,
+        zipline: lane?.color ?? null,
       });
     }
   }
+  const me = paths.data?.players.find((p) => p.is_me);
+  const laneOf = new Map((paths.data?.lanes ?? []).map((l) => [l.id, l]));
+  const myZipSeconds = me ? me.zip.reduce((sum, [a, b]) => sum + (b - a), 0) : 0;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,420px)]">
@@ -113,7 +120,36 @@ export default function Timeline({
               </div>
             </div>
           ))}
+          {me && (
+            <div className="grid grid-cols-[6.5rem_1fr] items-center gap-2">
+              <span className="text-sm text-muted">Your ziplines</span>
+              <div className="relative h-8 overflow-hidden rounded-lg bg-panel2 border border-line">
+                {me.zip.map(([a, b, laneId], i) => {
+                  const lane = laneOf.get(laneId);
+                  const label = `${clock(a)} ${lane?.name ?? ""} zipline, ${b - a} s`;
+                  return (
+                    <button
+                      key={`z${i}`}
+                      type="button"
+                      title={label}
+                      aria-label={label}
+                      onClick={() => setTime(a)}
+                      className="absolute top-1.5 bottom-1.5 rounded-sm hover:brightness-125"
+                      style={{ left: `${(a / duration) * 100}%`, width: `${Math.max(0.4, ((b - a) / duration) * 100)}%`, background: lane?.color }}
+                    />
+                  );
+                })}
+                <span className="absolute top-0 h-full w-0.5 bg-ink" style={{ left: `${(t / duration) * 100}%` }} aria-hidden />
+              </div>
+            </div>
+          )}
         </div>
+        {me && (
+          <p className="text-sm text-dim">
+            <Icon icon={CableCar} /> You rode ziplines <b className="text-ink tnum">{me.zip.length}</b> times,{" "}
+            <b className="text-ink tnum">{Math.round(myZipSeconds / 60)} min</b> in total. Bar colour = lane.
+          </p>
+        )}
 
         <label className="block">
           <span className="label">Time: </span>
@@ -154,13 +190,78 @@ export default function Timeline({
 
       <div>
         <h3 className="text-lg font-bold mb-2">Where everyone was</h3>
-        <div className="flex gap-4 text-sm text-dim mb-2">
-          <span><span style={{ color: ALLY }}>●</span> Your team</span>
-          <span><span style={{ color: ENEMY }}>●</span> Enemies</span>
-          <span>◎ You (white ring)</span>
-          <span>✕ Dead</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dim mb-2">
+          <span><span style={{ color: ALLY }}>◯</span> Your team</span>
+          <span><span style={{ color: ENEMY }}>◯</span> Enemies</span>
+          <span>White ring: you</span>
+          <span><Icon icon={CableCar} /> On a zipline</span>
+          <span>Faded ✕: dead</span>
         </div>
-        <Minimap map={report.map} markers={markers} caption={`Positions at ${clock(t)}. Hover a dot for the hero.`} />
+        <Minimap map={report.map} markers={markers} caption={`Positions at ${clock(t)}. Hover a hero for their name.`} />
+        {paths.data && <LiveList live={live} t={t} />}
+      </div>
+    </div>
+  );
+}
+
+type PathPlayer = Paths["players"][number];
+interface Live {
+  p: PathPlayer;
+  dead: [number, number] | undefined;
+  lane: Paths["lanes"][number] | undefined;
+}
+
+/** Who is dead or riding a zipline at second t. Rides are exact to the second. */
+function liveStatus(paths: Paths, t: number): Live[] {
+  const laneOf = new Map(paths.lanes.map((l) => [l.id, l]));
+  return paths.players.map((p) => {
+    const dead = p.dead.find(([a, b]) => a <= t && t < b);
+    const ride = dead ? undefined : p.zip.find(([a, b]) => a <= t && t < b);
+    return { p, dead, lane: ride ? laneOf.get(ride[2]) : undefined };
+  });
+}
+
+function LiveList({ live, t }: { live: Live[]; t: number }) {
+  const riding = live.filter((l) => l.lane).length;
+  const dead = live.filter((l) => l.dead).length;
+  return (
+    <div className="mt-4 space-y-2">
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <h4 className="label">Live at {clock(t)}</h4>
+        <span className="text-sm text-dim">
+          <b className="text-ink tnum">{riding}</b> on ziplines · <b className="text-ink tnum">{dead}</b> dead
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        {[true, false].map((ally) => (
+          <ul key={String(ally)} className="space-y-1" aria-label={ally ? "Your team" : "Enemies"}>
+            {live
+              .filter((l) => l.p.ally === ally)
+              .map(({ p, dead, lane }) => (
+                <li key={p.slot} className="flex min-w-0 items-center gap-2">
+                  {p.image && (
+                    <img
+                      src={p.image}
+                      alt=""
+                      className={`h-7 w-7 shrink-0 rounded-full border-2 object-cover ${dead ? "opacity-40" : ""}`}
+                      style={{ borderColor: ally ? ALLY : ENEMY }}
+                    />
+                  )}
+                  <span className={`truncate ${p.is_me ? "font-bold" : ""}`}>{p.is_me ? "You" : p.name}</span>
+                  {lane && (
+                    <span className="chip shrink-0 py-0 text-xs" style={{ borderColor: lane.color }}>
+                      <Icon icon={CableCar} /> {lane.name}
+                    </span>
+                  )}
+                  {dead && (
+                    <span className="chip shrink-0 py-0 text-xs text-high">
+                      <Icon icon={Skull} /> {Math.max(0, dead[1] - t)} s
+                    </span>
+                  )}
+                </li>
+              ))}
+          </ul>
+        ))}
       </div>
     </div>
   );

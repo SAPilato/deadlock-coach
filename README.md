@@ -27,6 +27,8 @@ Other commands: `npm test` (pytest + vitest), `npm run seed` (rebuild the offlin
 - **Match report**: ranked findings, souls timeline with a live minimap scrubber,
   you vs your rank, death map by game phase, item timing, lane phase.
 - **Replays (optional)**: auto-download or upload a `.dem` to add the urn check.
+- **Live review**: the minimap shows every hero's portrait. Scrub the timeline to see
+  who is on a zipline (and which lane) or dead at that second. Your rides show as bars.
 - **Trends**: each habit over your last 20 games: improving, same or worse.
 
 Game phases come from objectives, not a clock:
@@ -81,8 +83,8 @@ Build Lab limits:
   Boss, Shrines and Base Guardians, the 2 urn sites, Bell Tower, Sunken Plaza, Haunt
   camps, districts, buff containers, crates, steam vents and more. Hover for facts.
 - **Routes:** is optimal movement or the zipline faster? Pick A and B, or pick a
-  destination and see which option wins from every spot. Speeds are measured from
-  real matches.
+  destination and see which option wins from every spot. Routes can chain several
+  ziplines (ride, switch, ride). Speeds and zipline switches are measured from real matches.
 - **Waves:** real trooper waves from a replay, with play/pause, and where each
   lane's waves met every minute. A sample replay is bundled.
 - **Your heatmap:** where you spent time in laning, mid and late game over your
@@ -96,6 +98,15 @@ Macro Map notes:
 - Route times: straight line × a detour factor measured from real paths. Zipline
   boost, blocked lanes and walls are not modelled: `est.`
 - Wave data needs a replay. Your own appear after you load a replay on a match.
+
+Build Lab helper (section 2):
+- **Start:** what players at your rank buy in each phase (0-9, 9-20, 20-30, 30+ min),
+  with one click to add the usual start.
+- **Spikes:** each item in your build order: what it adds (gun DPS, durability, ability
+  damage) and when you would have it, from your own souls in recent games. Big jumps and
+  big spending tiers (like weapon at 4,800 souls) are marked as spikes.
+- **Counter-buy:** pick the enemy heroes (or load your last match). Items that win clearly
+  more, or less, than usual against them, for your hero and rank. `est.`
 
 Build Lab ability damage: damage = base + scaling × spirit power, from each
 ability's game data, plus the upgrade tiers you pick. Values that scale with

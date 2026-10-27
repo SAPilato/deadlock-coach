@@ -88,3 +88,17 @@ def test_import_build_from_match(api, seed_info):
     assert end["hero_id"] == PARADOX
     assert 0 < len(early["items"]) < len(end["items"]) <= 12
     assert early["level"] < end["level"]
+
+
+def test_helper_spikes_follow_build_order(api, shop):
+    weapon = [i["id"] for i in shop["items"] if i["slot"] == "weapon" and i["cost"] == 800][:3]
+    r = api.post("/api/buildlab/helper/spikes", json={"hero_id": shop["hero"]["id"], "items": weapon}).json()
+    assert [s["id"] for s in r["steps"]] == weapon
+    assert [s["souls"] for s in r["steps"]] == [800, 1600, 2400]
+    assert all(set(s["gains"]) == {"dps", "ehp", "ability"} for s in r["steps"])
+
+
+def test_match_enemies_are_the_other_team(api):
+    m = api.get("/api/matches").json()["matches"][0]
+    r = api.get(f"/api/matches/{m['match_id']}/enemies").json()
+    assert len(r["enemies"]) == 6 and r["hero_id"] not in r["enemies"]

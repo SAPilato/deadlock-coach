@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useId, useState } from "react";
+import { CableCar } from "lucide-react";
 import type { MapLayer } from "../lib/api";
 
 export interface Marker {
@@ -10,6 +11,10 @@ export interface Marker {
   size?: number;
   shape?: "dot" | "x" | "ring";
   emphasis?: boolean;
+  /** Hero portrait drawn inside a team-coloured ring. */
+  image?: string | null;
+  /** Lane colour of the zipline this hero is riding right now. */
+  zipline?: string | null;
   onClick?: () => void;
 }
 
@@ -27,6 +32,7 @@ export default function Minimap({
   caption?: string;
 }) {
   const [hover, setHover] = useState<Marker | null>(null);
+  const uid = useId().replace(/:/g, "");
   const S = 1000;
   return (
     <figure className="w-full" style={{ maxWidth }}>
@@ -86,7 +92,38 @@ export default function Minimap({
               >
                 {/* Hit target larger than the mark */}
                 <circle cx={cx} cy={cy} r={r + 12} fill="transparent" />
-                {m.shape === "x" ? (
+                {m.image ? (
+                  <g>
+                    <clipPath id={`${uid}${m.key}`}>
+                      <circle cx={cx} cy={cy} r={r} />
+                    </clipPath>
+                    <circle cx={cx} cy={cy} r={r} fill={SURFACE} />
+                    <image
+                      href={m.image}
+                      x={cx - r}
+                      y={cy - r}
+                      width={2 * r}
+                      height={2 * r}
+                      clipPath={`url(#${uid}${m.key})`}
+                      opacity={m.shape === "x" ? 0.35 : 1}
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke={m.color} strokeWidth={6} />
+                    {m.emphasis && <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke="#ffffff" strokeWidth={4} />}
+                    {m.shape === "x" && (
+                      <g stroke="#ffffff" strokeWidth={6} strokeLinecap="round">
+                        <line x1={cx - r * 0.6} y1={cy - r * 0.6} x2={cx + r * 0.6} y2={cy + r * 0.6} />
+                        <line x1={cx - r * 0.6} y1={cy + r * 0.6} x2={cx + r * 0.6} y2={cy - r * 0.6} />
+                      </g>
+                    )}
+                    {m.zipline && (
+                      <g>
+                        <circle cx={cx + r * 0.8} cy={cy - r * 0.8} r={15} fill={m.zipline} stroke={SURFACE} strokeWidth={3} />
+                        <CableCar x={cx + r * 0.8 - 10} y={cy - r * 0.8 - 10} width={20} height={20} color={SURFACE} strokeWidth={2.5} />
+                      </g>
+                    )}
+                  </g>
+                ) : m.shape === "x" ? (
                   <g stroke={m.color} strokeWidth={6} strokeLinecap="round">
                     <line x1={cx - r} y1={cy - r} x2={cx + r} y2={cy + r} stroke={SURFACE} strokeWidth={10} />
                     <line x1={cx - r} y1={cy + r} x2={cx + r} y2={cy - r} stroke={SURFACE} strokeWidth={10} />

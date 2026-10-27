@@ -53,6 +53,11 @@ def _line(e) -> str:
     return f"{sign}{value}{unit} {e.label}"
 
 
+def item_lines(it: dict, n: int = 3) -> list[str]:
+    """What an item always gives, as short lines ("+18% Bullet Resist")."""
+    return [_line(e) for e in item_effects(it) if e.kind == "always" and e.target != "enemy"][:n]
+
+
 def shop(gd: GameData, hero_id: int, bracket: tuple[int, int]) -> dict:
     hero, _ = hero_and_weapon(gd, hero_id)
     stats: dict[int, dict] = {}

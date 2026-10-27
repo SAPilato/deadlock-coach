@@ -11,8 +11,9 @@ import Effects from "../components/build/Effects";
 import Dummy from "../components/build/Dummy";
 import SavedBuilds from "../components/build/SavedBuilds";
 import Abilities from "../components/build/Abilities";
+import Helper from "../components/build/Helper";
 import { souls } from "../components/build/common";
-import { ArrowLeftRight, ChartColumn, FlaskConical, Save, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, ChartColumn, FlaskConical, Save, TriangleAlert, WandSparkles } from "lucide-react";
 
 const DEFAULT_TARGET: Target = { hp: 2500, bullet_resist: 0, headshot_pct: 0, spirit_resist: 0 };
 const STORE_KEY = "coach.buildlab.v1";
@@ -202,9 +203,21 @@ export default function BuildLab() {
         </div>
       </Section>
 
+      <Section id="helper" icon={WandSparkles} title="2. Build helper">
+        <Helper
+          build={build!}
+          heroes={heroes.data ?? []}
+          full={work.items.length >= slots.limit}
+          lastMatchId={matches.data?.matches.find((m) => !m.street_brawl)?.match_id ?? null}
+          onAdd={(ids) =>
+            update((w) => ({ items: [...w.items, ...ids.filter((id) => !w.items.includes(id))].slice(0, slots.limit) }))
+          }
+        />
+      </Section>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]">
         <div className="space-y-6 min-w-0">
-          <Section title="2. Your build">
+          <Section title="3. Your build">
             <Slots
               items={buildItems}
               limit={slots.limit}
@@ -220,7 +233,7 @@ export default function BuildLab() {
               </p>
             ))}
           </Section>
-          <Section id="shop" title="3. Shop">
+          <Section id="shop" title="4. Shop">
             {shop.isLoading && <Loading label="Loading the shop…" />}
             {shop.error && <ErrorBox error={shop.error} />}
             {shop.data && (
@@ -260,7 +273,7 @@ export default function BuildLab() {
         </div>
       </div>
 
-      <Section title="4. Conditional effects">
+      <Section title="5. Conditional effects">
         <Effects
           effects={sheet.data?.effects ?? []}
           toggles={toggles}
@@ -270,11 +283,11 @@ export default function BuildLab() {
         />
       </Section>
 
-      <Section title="5. DPS dummy">
+      <Section title="6. DPS dummy">
         <Dummy target={buildOf(work).target} onChange={(target) => update({ target })} sheet={sheet.data} />
       </Section>
 
-      <Section title="6. Ability damage">
+      <Section title="7. Ability damage">
         <Abilities
           sheet={sheet.data}
           tier={build?.ability_tier ?? 0}
@@ -284,7 +297,7 @@ export default function BuildLab() {
         />
       </Section>
 
-      <Section title="7. Save and compare">
+      <Section title="8. Save and compare">
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={(e) => {

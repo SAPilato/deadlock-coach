@@ -3,6 +3,7 @@ benchmarks, timeline, death map, item timing and lane summary."""
 from __future__ import annotations
 
 from app.analysis.model import MatchContext
+from app.analysis.paths import zipline_rides
 from app.findings.engine import Report
 from app.findings.rules.items_late import core_items
 from app.gamedata.service import GameData
@@ -229,7 +230,12 @@ def _lane(gd: GameData, ctx: MatchContext) -> dict:
 
 
 def build_paths(gd: GameData, ctx: MatchContext, step: int = 5) -> dict:
-    """Minimap positions for every player every `step` seconds, for the timeline scrubber."""
+    """Minimap positions for every player every `step` seconds, for the timeline scrubber.
+
+    `zip` lists each zipline ride to the second ([start, end, lane id]) from the match's
+    movement types, so the review can show who is riding at any moment.
+    """
+    zip_id = ctx.enum_value("EMoveType", "Ziplining")
     players = []
     for q in ctx.players:
         if q.track is None:
@@ -242,5 +248,12 @@ def build_paths(gd: GameData, ctx: MatchContext, step: int = 5) -> dict:
             **hero_card(gd, q.hero_id), "slot": q.slot, "team": q.team, "is_me": q.slot == ctx.player.slot,
             "ally": q.team == ctx.player.team, "pts": pts,
             "dead": [[d.t, d.respawn_t] for d in q.death_list],
+            # Paths run a few seconds past the end of the match; keep rides inside it.
+            "zip": [
+                [r.start, min(r.end, ctx.duration_s), r.lane_id]
+                for r in zipline_rides(q.track, zip_id, ctx.geo.lanes.values())
+                if r.start < ctx.duration_s
+            ],
         })
-    return {"step": step, "duration_s": ctx.duration_s, "players": players}
+    lanes = [{"id": ln.id, "name": ln.name, "color": ln.color} for ln in ctx.geo.lanes.values()]
+    return {"step": step, "duration_s": ctx.duration_s, "players": players, "lanes": lanes}

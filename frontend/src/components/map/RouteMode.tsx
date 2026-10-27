@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { num } from "../../lib/format";
 import type { Pt } from "../../lib/geo";
-import { compare, type Lane, type Speeds } from "../../lib/route";
+import { buildGraph, compare, quickVerdict, towards, type Lane, type Leg, type Speeds } from "../../lib/route";
 import { ErrorBox, EstTag, Loading } from "../ui";
 import MapCanvas, { Lanes, S, SURFACE } from "./MapCanvas";
 
-// Two outcomes, validated category slots (not team colours).
+// Three outcomes, validated category slots (not team colours; blue failed CVD next to violet).
 const ZIP = "#199e70";
+const MULTI = "#c98500"; // two or more ziplines
 const FOOT = "#9085e9";
 const INK = "#f4f5f7";
 const MAX_SAVING_S = 20; // full colour at 20+ seconds saved
@@ -62,18 +63,18 @@ export default function RouteMode() {
         }
       : null;
 
+  // Every zipline and where you can switch between them; rebuilt only when the map changes.
+  const graph = useMemo(() => (d ? buildGraph(lanes, d.transform) : null), [d, lanes]);
   const verdict = useMemo(
-    () => (d && speeds && a && b ? compare(a, b, lanes, d.transform, speeds) : null),
-    [a, b, d, speeds, lanes],
+    () => (d && graph && speeds && a && b ? compare(a, b, graph, d.transform, speeds) : null),
+    [a, b, d, graph, speeds],
   );
   const grid = useMemo(() => {
-    if (!d || !m || !speeds || !dest) return [];
-    const g = m.grid;
-    return m.walkable.map(([i, j]) => {
-      const v = compare([(i + 0.5) / g, (j + 0.5) / g], dest, lanes, d.transform, speeds);
-      return { i, j, faster: v.faster, saving: v.saving };
-    });
-  }, [d, m, speeds, dest, lanes]);
+    if (!d || !m || !graph || !speeds || !dest) return [];
+    const field = towards(dest, graph, d.transform, speeds);
+    const n = m.grid;
+    return m.walkable.map(([i, j]) => ({ i, j, ...quickVerdict([(i + 0.5) / n, (j + 0.5) / n], graph, field, d.transform, speeds) }));
+  }, [d, m, graph, speeds, dest]);
 
   if (layers.isLoading || mv.isLoading) return <Loading label="Measuring how fast players really move…" />;
   if (layers.error || mv.error) return <ErrorBox error={layers.error || mv.error} />;
@@ -89,6 +90,10 @@ export default function RouteMode() {
   };
   const cell = S / m.grid;
   const zipShare = grid.length ? grid.filter((c) => c.faster === "zip").length / grid.length : 0;
+  const multiShare = grid.length ? grid.filter((c) => c.faster === "zip" && c.rides > 1).length / grid.length : 0;
+  const color = (c: { faster: string; rides: number }) => (c.faster === "foot" ? FOOT : c.rides > 1 ? MULTI : ZIP);
+  const rideLegs = verdict?.zip?.legs.filter((l): l is Extract<Leg, { kind: "ride" }> => l.kind === "ride") ?? [];
+  const zipColor = rideLegs.length > 1 ? MULTI : ZIP;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,680px)_1fr]">
@@ -105,7 +110,7 @@ export default function RouteMode() {
             y={c.j * cell}
             width={cell}
             height={cell}
-            fill={c.faster === "zip" ? ZIP : FOOT}
+            fill={color(c)}
             opacity={0.15 + 0.6 * Math.min(1, c.saving / MAX_SAVING_S)}
           />
         ))}
@@ -115,9 +120,22 @@ export default function RouteMode() {
             <line x1={a[0] * S} y1={a[1] * S} x2={b[0] * S} y2={b[1] * S} stroke={FOOT} strokeWidth={6} strokeDasharray="14 10" />
             {verdict.zip && (
               <g>
-                <polyline points={line([a, verdict.zip.entry])} fill="none" stroke={ZIP} strokeWidth={4} strokeDasharray="4 8" />
-                <polyline points={line(verdict.zip.ridePath)} fill="none" stroke={ZIP} strokeWidth={10} strokeLinecap="round" />
-                <polyline points={line([verdict.zip.exit, b])} fill="none" stroke={ZIP} strokeWidth={4} strokeDasharray="4 8" />
+                {verdict.zip.legs.map((leg, k) =>
+                  leg.kind === "walk" ? (
+                    <polyline key={k} points={line([leg.from, leg.to])} fill="none" stroke={zipColor} strokeWidth={4} strokeDasharray="4 8" />
+                  ) : (
+                    <polyline key={k} points={line(leg.path)} fill="none" stroke={zipColor} strokeWidth={10} strokeLinecap="round" />
+                  ),
+                )}
+                {/* Number each ride where you latch on. */}
+                {rideLegs.map((leg, k) => (
+                  <g key={`n${k}`}>
+                    <circle cx={leg.path[0][0] * S} cy={leg.path[0][1] * S} r={15} fill={INK} stroke={SURFACE} strokeWidth={3} />
+                    <text x={leg.path[0][0] * S} y={leg.path[0][1] * S} textAnchor="middle" dominantBaseline="central" fontSize={18} fontWeight={700} fill={SURFACE}>
+                      {k + 1}
+                    </text>
+                  </g>
+                ))}
               </g>
             )}
           </g>
@@ -181,10 +199,10 @@ export default function RouteMode() {
                   <div className="text-xl">Pick the safer path.</div>
                 </div>
               ) : (
-                <div className={`rounded-xl border-2 p-4 ${verdict.faster === "zip" ? "border-[#199e70]" : "border-[#9085e9]"}`}>
+                <div className="rounded-xl border-2 p-4" style={{ borderColor: verdict.faster === "foot" ? FOOT : zipColor }}>
                   <div className="label">Faster</div>
                   <div className="text-3xl font-bold">
-                    {verdict.faster === "zip" ? `Zipline on ${verdict.zip?.lane.name}` : "On foot"}
+                    {verdict.faster === "zip" ? rideLegs.map((l) => l.lane.name).join(" → ") : "On foot"}
                     <EstTag />
                   </div>
                   <div className="text-xl">
@@ -201,16 +219,32 @@ export default function RouteMode() {
                 </div>
                 {verdict.zip && (
                   <div className="rounded-xl bg-panel2 border border-line p-4">
-                    <div className="label" style={{ color: ZIP }}>
-                      ━ Zipline
+                    <div className="label" style={{ color: zipColor }}>
+                      ━ {rideLegs.length > 1 ? `${rideLegs.length} ziplines` : "Zipline"}
                     </div>
                     <div className="text-3xl font-bold tnum">{num(verdict.zip.total)} s</div>
-                    <div className="text-sm text-dim tnum">
-                      walk {num(verdict.zip.walkIn)} + ride {num(verdict.zip.ride)} + walk {num(verdict.zip.walkOut)} s
-                    </div>
                   </div>
                 )}
               </div>
+              {verdict.zip && (
+                <div>
+                  <div className="label">Zipline route, step by step</div>
+                  <ol className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 tnum">
+                    {verdict.zip.legs
+                      .filter((leg) => leg.kind === "ride" || leg.seconds >= 0.5) // hide sub-second steps
+                      .map((leg, k) => (
+                      <li key={k} className="flex items-center gap-2">
+                        {k > 0 && <span className="text-muted" aria-hidden>→</span>}
+                        <span className={`chip ${leg.kind === "ride" ? "font-bold" : ""}`}>
+                          {leg.kind === "ride"
+                            ? `${rideLegs.indexOf(leg) + 1}. Ride ${leg.lane.name} ${num(leg.seconds)} s`
+                            : `Walk ${num(leg.seconds)} s`}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-dim">Click two spots on the map.</p>
@@ -221,7 +255,10 @@ export default function RouteMode() {
             <div className="space-y-2">
               <div className="flex gap-4 text-lg">
                 <span>
-                  <span style={{ color: ZIP }}>■</span> Zipline faster
+                  <span style={{ color: ZIP }}>■</span> 1 zipline faster
+                </span>
+                <span>
+                  <span style={{ color: MULTI }}>■</span> 2+ ziplines faster
                 </span>
                 <span>
                   <span style={{ color: FOOT }}>■</span> On foot faster
@@ -229,7 +266,13 @@ export default function RouteMode() {
               </div>
               <p className="text-dim">Brighter = more seconds saved.</p>
               <p className="text-xl">
-                Zipline wins from <b className="tnum">{Math.round(zipShare * 100)}%</b> of the map.
+                Ziplines win from <b className="tnum">{Math.round(zipShare * 100)}%</b> of the map.
+                {multiShare > 0 && (
+                  <>
+                    {" "}
+                    Switching ziplines wins from <b className="tnum">{Math.round(multiShare * 100)}%</b>.
+                  </>
+                )}
               </p>
             </div>
           ) : (
@@ -243,6 +286,11 @@ export default function RouteMode() {
           </li>
           <li>Real paths bend: walking counts ×{num(speeds.detour, 2)} the straight line.</li>
           <li>Ziplines ride both ways (game setting). Zipline boost and blocked lanes are not modelled.</li>
+          {m.switches.count > 0 && (
+            <li>
+              Players switch ziplines often: {num(m.switches.count)} switches seen, about {num(m.switches.gap_s ?? 0)} s apart.
+            </li>
+          )}
         </ul>
       </div>
     </div>

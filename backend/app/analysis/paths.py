@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Iterable, Protocol
 
 
 @dataclass
@@ -36,6 +37,37 @@ class Track:
         if i1 <= i0:
             return 0.0
         return math.dist((self.x[i0], self.y[i0]), (self.x[i1], self.y[i1])) / ((i1 - i0) * self.interval)
+
+
+class _Lane(Protocol):
+    id: int
+
+    def dist(self, x: float, y: float) -> float: ...
+
+
+@dataclass
+class Ride:
+    start: int  # first second on the zipline
+    end: int  # first second off it
+    lane_id: int  # the lane whose zipline it was (nearest at mid-ride)
+
+
+def zipline_rides(track: Track, zip_id: int | None, lanes: Iterable[_Lane]) -> list[Ride]:
+    """Each stretch of seconds the player spent ziplining, tagged with the nearest lane zipline."""
+    lanes = list(lanes)
+    if zip_id is None or not track.move or not lanes:
+        return []
+    rides: list[Ride] = []
+    start = None
+    for t, m in enumerate([*track.move, -1]):  # sentinel closes a ride at the end
+        if m == zip_id and start is None:
+            start = t
+        elif m != zip_id and start is not None:
+            mid = (start + t - 1) // 2
+            x, y = track.x[mid], track.y[mid]
+            rides.append(Ride(start, t, min(lanes, key=lambda ln: ln.dist(x, y)).id))
+            start = None
+    return rides
 
 
 def decode_paths(match_paths: dict | None) -> dict[int, Track]:

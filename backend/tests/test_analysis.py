@@ -3,6 +3,7 @@ import statistics
 
 from app.analysis.loader import geometry
 from app.analysis.model import ObjectiveEvent
+from app.analysis.paths import Track, zipline_rides
 from app.report import phase_bounds, phase_of
 from tests import factories as f
 
@@ -96,3 +97,21 @@ def test_no_base_guardian_down_means_no_late_game(seed_gd):
     bounds = phase_bounds(f.context(seed_gd, [me], duration=1700, objectives=objectives))
     assert bounds[1] == 1700
     assert phase_of(1699, bounds) == "mid"
+
+
+class _Lane:
+    def __init__(self, id, y):
+        self.id, self.y = id, y
+
+    def dist(self, x, y):
+        return abs(y - self.y)
+
+
+def test_zipline_rides_split_by_lane():
+    zip_id = 6
+    move = [0, 6, 6, 6, 0, 0, 6, 6, 0, 6]  # three rides; the last runs to the end
+    ys = [0, 0, 0, 0, 0, 0, 900, 900, 900, 0]
+    tr = Track(slot=0, x=[0.0] * 10, y=[float(v) for v in ys], health=[1] * 10, combat=[0] * 10, move=move)
+    rides = zipline_rides(tr, zip_id, [_Lane(1, 0), _Lane(4, 1000)])
+    assert [(r.start, r.end, r.lane_id) for r in rides] == [(1, 4, 1), (6, 8, 4), (9, 10, 1)]
+    assert zipline_rides(tr, None, [_Lane(1, 0)]) == []

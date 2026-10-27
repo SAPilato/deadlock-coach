@@ -184,7 +184,9 @@ export interface Paths {
     ally: boolean;
     pts: [number, number][];
     dead: [number, number][];
+    zip: [number, number, number][]; // [start s, end s, lane id] per zipline ride
   })[];
+  lanes: { id: number; name: string; color: string }[];
 }
 
 export type TrendStatus = "improving" | "same" | "worse" | "not_enough";
@@ -389,6 +391,7 @@ export interface Movement {
   detour_best: number;
   samples: { zip_s: number; foot_windows: number; trips: number };
   attach_s: number;
+  switches: { count: number; gap_s: number | null }; // one zipline to another, measured
   avg_hero_move: number;
   grid: number;
   walkable: [number, number][];
@@ -461,6 +464,56 @@ export interface Lesson {
   habit: string | null;
 }
 
+// ---- Build helper ---------------------------------------------------------------------
+
+export interface HelperItem {
+  id: number;
+  name: string;
+  tier: number | null;
+  cost: number | null;
+  slot: SlotType | null;
+  image: string | null;
+}
+
+export interface PhasePicks {
+  phases: { phase: string; games: number; items: (HelperItem & { pick_rate: number; win_rate: number; games: number })[] }[];
+  games: number | null;
+  win_rate: number | null;
+  bracket: [number, number];
+}
+
+export interface SpikeStep extends HelperItem {
+  souls: number; // total spent after this item
+  level: number;
+  at_s: number | null; // when your recent games reached these souls
+  typical_s: number | null; // when players at your rank usually buy it
+  gains: { dps: number | null; ehp: number | null; ability: number | null };
+  bonus: { slot: SlotType; threshold: number; bonus: number; jump: number } | null;
+  spike: boolean;
+  spike_on: ("dps" | "ehp" | "ability")[];
+}
+
+export interface Spikes {
+  steps: SpikeStep[];
+  pace: { games: number; this_hero: boolean } | null;
+}
+
+export interface CounterRow extends HelperItem {
+  delta: number; // win rate vs these enemies minus the item's other games
+  z: number;
+  games: number;
+  strong_vs: string[];
+  weak_vs: string[];
+  lines: string[];
+}
+
+export interface Counters {
+  buy: CounterRow[];
+  skip: CounterRow[];
+  enemies: number[];
+  bracket: [number, number];
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -529,6 +582,11 @@ export const api = {
   macroScenarios: () => request<ScenarioRow[]>("/macro/scenarios"),
   macroScenario: (matchId: number, t: number) => request<Scenario>(`/macro/scenario?match_id=${matchId}&t=${t}`),
   learn: () => request<Lesson[]>("/learn"),
+  helperPhases: (heroId: number) => request<PhasePicks>(`/buildlab/helper/phases?hero_id=${heroId}`),
+  helperSpikes: (b: Build) => request<Spikes>("/buildlab/helper/spikes", { method: "POST", body: JSON.stringify(b) }),
+  helperCounters: (heroId: number, enemies: number[]) =>
+    request<Counters>(`/buildlab/helper/counters?hero_id=${heroId}&enemies=${enemies.join(",")}`),
+  matchEnemies: (matchId: number) => request<{ match_id: number; hero_id: number; enemies: number[] }>(`/matches/${matchId}/enemies`),
   matchBuild: (matchId: number, t?: number) =>
     request<{ hero_id: number; level: number; items: number[]; at: number; name: string }>(
       `/matches/${matchId}/build${t != null ? `?t=${t}` : ""}`,

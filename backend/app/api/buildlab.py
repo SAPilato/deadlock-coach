@@ -7,9 +7,11 @@ from fastapi.responses import JSONResponse
 from app.api.deps import coach, settings
 from app.api.routes import _account, _api_errors
 from app.buildlab import store
-from app.buildlab.catalog import hero_abilities, hero_and_weapon, playable_heroes, shop, shop_items
+from app.buildlab.catalog import hero_abilities, hero_and_weapon, item_lines, playable_heroes, shop, shop_items
+from app.buildlab.helper import counter_items, phase_picks, souls_curve, spike_steps
 from app.buildlab.engine import Target, compute, max_level
 from app.buildlab.slots import slot_limit
+from app.gamedata.client import ApiError
 from app.settings import Settings
 from app.state import AppState
 
@@ -105,6 +107,107 @@ def import_build(data: dict, st: AppState = Depends(coach)):
 
 
 # ---- build used in a real match ----------------------------------------------------------
+
+
+# ---- build helper ----------------------------------------------------------------------
+
+
+def _shop_map(st: AppState, hero_id: int) -> dict[int, dict]:
+    return {i["id"]: i for i in shop_items(st.gd, hero_id)}
+
+
+CURVE_GAMES = 8
+
+
+def _your_souls(st: AppState, s: Settings, hero_id: int) -> dict | None:
+    """Your average souls over time: this hero's recent games if 3+, else any recent games."""
+    if not s.active_account:
+        return None
+    try:
+        recent = [m for m in st.gd.match_history(s.active_account) if m.get("game_mode") == 1][:20]
+    except ApiError:
+        return None
+    mine = [m for m in recent if m.get("hero_id") == hero_id]
+    pool, hero_only = (mine, True) if len(mine) >= 3 else (recent, False)
+    games = []
+    for m in pool[:CURVE_GAMES]:
+        try:
+            info = st.gd.match_metadata(m["match_id"])
+        except ApiError:
+            continue
+        info = info.get("match_info", info)
+        me = next((p for p in info.get("players", []) if p["account_id"] == s.active_account), None)
+        if me:
+            games.append([(x["time_stamp_s"], x["net_worth"]) for x in me.get("stats") or []])
+    curve = souls_curve(games)
+    return {"curve": curve, "games": len(games), "this_hero": hero_only} if curve else None
+
+
+@router.get("/buildlab/helper/phases")
+def helper_phases(hero_id: int, st: AppState = Depends(coach), s: Settings = Depends(settings)):
+    """Most-bought items per phase for your hero and rank."""
+    return _api_errors(lambda: {**phase_picks(st.gd.item_flow(hero_id, s.bracket), _shop_map(st, hero_id)), "bracket": list(s.bracket)})
+
+
+@router.post("/buildlab/helper/spikes")
+def helper_spikes(b: store.BuildIn, st: AppState = Depends(coach), s: Settings = Depends(settings)):
+    """Each item in build order: what it adds and when you would have it."""
+
+    def run():
+        hero, weapon = hero_and_weapon(st.gd, b.hero_id)
+        valid = _shop_map(st, b.hero_id)
+        try:
+            typical = {r["item_id"]: round(r["avg_buy_time_s"]) for r in st.gd.item_stats(b.hero_id, s.bracket) if r.get("avg_buy_time_s")}
+        except ApiError:
+            typical = {}
+        yours = _your_souls(st, s, b.hero_id)
+        steps = spike_steps(
+            hero, weapon, [valid[i] for i in b.items if i in valid], hero_abilities(st.gd, hero),
+            Target(**b.target.model_dump()), yours["curve"] if yours else None, typical,
+        )
+        return {"steps": steps, "pace": {k: v for k, v in yours.items() if k != "curve"} if yours else None}
+
+    return _api_errors(run)
+
+
+@router.get("/buildlab/helper/counters")
+def helper_counters(
+    hero_id: int,
+    enemies: str = Query(..., description="Comma-separated enemy hero ids (up to 6)"),
+    st: AppState = Depends(coach),
+    s: Settings = Depends(settings),
+):
+    """Items that win more than usual for your hero against these enemy heroes."""
+
+    def run():
+        ids = list(dict.fromkeys(int(x) for x in enemies.split(",") if x.strip()))[:6]
+        if not ids:
+            raise ValueError("Pick at least one enemy hero.")
+        names = {h["id"]: h["name"] for h in st.gd.heroes()}
+        shop_map = _shop_map(st, hero_id)
+        out = counter_items(
+            st.gd.item_stats(hero_id, s.bracket),
+            {e: st.gd.item_stats(hero_id, s.bracket, enemy_id=e) for e in ids},
+            shop_map,
+            {e: names.get(e, str(e)) for e in ids},
+        )
+        for row in out["buy"] + out["skip"]:
+            row["lines"] = item_lines(shop_map[row["id"]], 2)
+        return {**out, "enemies": ids, "bracket": list(s.bracket)}
+
+    return _api_errors(run)
+
+
+@router.get("/matches/{match_id}/enemies")
+def match_enemies(match_id: int, account_id: int | None = None, st: AppState = Depends(coach), s: Settings = Depends(settings)):
+    """The enemy heroes you faced in a match."""
+    acc = _account(s, account_id)
+    info = _api_errors(lambda: st.gd.match_metadata(match_id))
+    info = info.get("match_info", info)
+    me = next((p for p in info["players"] if p["account_id"] == acc), None)
+    if me is None:
+        raise HTTPException(404, "You did not play in this match.")
+    return {"match_id": match_id, "hero_id": me["hero_id"], "enemies": [p["hero_id"] for p in info["players"] if p["team"] != me["team"]]}
 
 
 @router.get("/matches/{match_id}/build")

@@ -178,10 +178,16 @@ class GameData:
             {"hero_ids": hero_id, "resolution": 0, **self._bracket(bracket)},
         )
 
-    def item_stats(self, hero_id: int, bracket: tuple[int, int]) -> list[dict]:
-        return self._bench(
-            "/v1/analytics/item-stats", {"hero_id": hero_id, "min_matches": 20, **self._bracket(bracket)}
-        )
+    def item_stats(self, hero_id: int, bracket: tuple[int, int], enemy_id: int | None = None) -> list[dict]:
+        """Per-item games and wins for a hero; with `enemy_id`, only games against that hero."""
+        params = {"hero_id": hero_id, "min_matches": 20, **self._bracket(bracket)}
+        if enemy_id is not None:
+            params["enemy_hero_ids"] = enemy_id
+        return self._bench("/v1/analytics/item-stats", params)
+
+    def item_flow(self, hero_id: int, bracket: tuple[int, int]) -> dict:
+        """Items bought per phase (0-9, 9-20, 20-30, 30+ min) with pick and win counts."""
+        return self._bench("/v1/analytics/item-flow-stats", {"hero_ids": hero_id, **self._bracket(bracket)})
 
     def hero_stats(self, bracket: tuple[int, int]) -> list[dict]:
         return self._bench("/v1/analytics/hero-stats", self._bracket(bracket))

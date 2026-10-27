@@ -4,6 +4,19 @@ All notable changes. Newest first.
 
 ## [Unreleased]
 
+### Added (routes, live review, build helper)
+- Route planner chains ziplines: a graph of every zipline (ridden either way) with
+  walk-and-latch switches between them. Shows each step, numbers each ride, and colours
+  "2+ ziplines faster" on the map. In 40 matches players switched ziplines 3,260 times,
+  ~2 s apart; 96% of zipline time is on the 3 lane ziplines in the map data.
+- Game review: hero portraits on the minimap, a zipline badge on anyone riding, a
+  "Live at" list (zipline lane or respawn timer per hero), and your rides as bars.
+  Rides come from the match's per-second movement types, tagged with the nearest lane.
+- Build Lab helper: Start (most-bought items per phase at your rank, "add the usual
+  start"), Spikes (gains per purchase at the level you will be, your souls pace vs rank
+  timing, big spending tiers) and Counter-buy (per-enemy item win rates vs each item's
+  other games, z >= 2, from deadlock-api item-stats with `enemy_hero_ids`).
+
 ### Changed (Brass Deco with tab tones)
 - Brass Deco is the default look. Each tab has its own tone: Home brass, Matches
   amethyst, Trends verdigris, Build Lab sapphire, Map neon rose, Learn ivory,
